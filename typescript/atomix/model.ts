@@ -50,16 +50,19 @@ export enum Direction {
 
 export enum Tile {None, Wall}
 
-export interface Field {
+export interface Position {
     x: number
     y: number
 }
 
-export class TileAtom implements Field {
-    constructor(readonly level: Level, readonly atom: Atom, public x: number, public y: number) {
+export class MovableAtom implements Position {
+    constructor(private readonly level: Level,
+                private readonly atom: Atom,
+                public x: number,
+                public y: number) {
     }
 
-    predictMove(direction: Direction): Field {
+    predictMove(direction: Direction): Position {
         const level = this.level
         switch (direction) {
             case Direction.Up: {
@@ -90,13 +93,11 @@ export class TileAtom implements Field {
     }
 
     executeMove(direction: Direction): boolean {
-        const field: Field = this.predictMove(direction)
+        const field: Position = this.predictMove(direction)
         if (this.x === field.x && this.y === field.y) return false
-        const map = this.level.map
-        map[this.y][this.x] = Tile.None
+        this.level.moveAtom(this, field)
         this.x = field.x
         this.y = field.y
-        map[this.y][this.x] = this.atom
         return true
     }
 }
@@ -104,11 +105,25 @@ export class TileAtom implements Field {
 export type FieldIterator = (item: (Atom | Tile), x: number, y: number) => void
 
 export class Level {
-    constructor(readonly name: string,
-                readonly map: (Atom | Tile)[][],
-                readonly molecule: (Atom | Tile)[][]) {
+    constructor(private readonly name: string,
+                private readonly map: (Atom | Tile)[][],
+                private readonly molecule: (Atom | Tile)[][]) {
         console.assert(map.length > 0)
         console.assert(molecule.length > 0)
+    }
+
+    numRows(): number {
+        return this.map.length
+    }
+
+    numColumns(): number {
+        return this.map[0].length
+    }
+
+    moveAtom(source: MovableAtom, target: Position): void {
+        const atom: Atom = <Atom>this.map[source.y][source.x]
+        this.map[source.y][source.x] = Tile.None
+        this.map[target.y][target.x] = atom
     }
 
     isFieldEmpty(x: number, y: number): boolean {
@@ -118,7 +133,8 @@ export class Level {
 
     iterateFields(iterator: FieldIterator): void {
         this.map.forEach((row: (Atom | Tile)[], y: number) =>
-            row.forEach((item: Atom | Tile, x: number) => iterator(item, x, y)))
+            row.forEach((item: Atom | Tile, x: number) =>
+                iterator(item, x, y)))
     }
 
     clone(): Level {
