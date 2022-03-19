@@ -1,9 +1,9 @@
 import {Atom, Direction, Level, MovableAtom, Tile} from "./model.js"
-import {TouchControls} from "./controls.js"
+import {TouchControls} from "./touch-controls.js"
 import {Option, Options} from "../lib/common.js"
 
 export class Game {
-    static TILE_SIZE = 32
+    static TILE_SIZE = 64
 
     private readonly context = this.canvas.getContext("2d")
     private readonly atoms: MovableAtom[] = []
@@ -24,8 +24,9 @@ export class Game {
     }
 
     update(): void {
-        const width = this.level.numColumns() * Game.TILE_SIZE
-        const height = this.level.numRows() * Game.TILE_SIZE
+        const arena = this.level.arena
+        const width = arena.numColumns() * Game.TILE_SIZE
+        const height = arena.numRows() * Game.TILE_SIZE
         this.canvas.style.width = `${width}px`
         this.canvas.style.height = `${height}px`
         this.canvas.width = width * devicePixelRatio
@@ -34,7 +35,7 @@ export class Game {
         this.context.save()
         this.context.scale(devicePixelRatio, devicePixelRatio)
 
-        this.level.iterateFields((entry, x, y) => {
+        arena.iterateFields((entry, x, y) => {
             if (entry === Tile.Wall) {
                 this.context.fillStyle = "#333"
                 this.context.fillRect(
@@ -66,27 +67,28 @@ export class Game {
         this.context.restore()
     }
 
-    private collectAtoms(): MovableAtom[] {
-        const atoms: MovableAtom[] = []
-        this.level.iterateFields((item, x, y) => {
-            if (item instanceof Atom) {
-                atoms.push(new MovableAtom(this.level, item, x, y))
-            }
-        })
-        return atoms
-    }
-
     showPreviewMove(movableAtom: MovableAtom, direction: Direction) {
         this.previewMove = Options.valueOf([movableAtom, direction])
         this.update()
     }
 
     hidePreviewMove() {
-        if(this.previewMove.nonEmpty()) {
+        if (this.previewMove.nonEmpty()) {
             const pair = this.previewMove.get()
             pair[0].executeMove(pair[1])
             this.previewMove = Options.None
+            this.level.isSolved()
             this.update()
         }
+    }
+
+    private collectAtoms(): MovableAtom[] {
+        const atoms: MovableAtom[] = []
+        this.level.arena.iterateFields((item, x, y) => {
+            if (item instanceof Atom) {
+                atoms.push(new MovableAtom(this.level, item, x, y))
+            }
+        })
+        return atoms
     }
 }

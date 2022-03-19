@@ -63,30 +63,30 @@ export class MovableAtom implements Position {
     }
 
     predictMove(direction: Direction): Position {
-        const level = this.level
+        const arena = this.level.arena
         switch (direction) {
             case Direction.Up: {
                 let x = this.x
                 let y = this.y
-                while (level.isFieldEmpty(x, y - 1)) y--
+                while (arena.isFieldEmpty(x, y - 1)) y--
                 return {x: x, y: y}
             }
             case Direction.Down: {
                 let x = this.x
                 let y = this.y
-                while (level.isFieldEmpty(x, y + 1)) y++
+                while (arena.isFieldEmpty(x, y + 1)) y++
                 return {x: x, y: y}
             }
             case Direction.Left: {
                 let x = this.x
                 let y = this.y
-                while (level.isFieldEmpty(x - 1, y)) x--
+                while (arena.isFieldEmpty(x - 1, y)) x--
                 return {x: x, y: y}
             }
             case Direction.Right: {
                 let x = this.x
                 let y = this.y
-                while (level.isFieldEmpty(x + 1, y)) x++
+                while (arena.isFieldEmpty(x + 1, y)) x++
                 return {x: x, y: y}
             }
         }
@@ -102,47 +102,48 @@ export class MovableAtom implements Position {
     }
 }
 
-export type FieldIterator = (item: (Atom | Tile), x: number, y: number) => void
+export type Field = Atom | Tile
 
-export class Level {
-    constructor(private readonly name: string,
-                private readonly map: (Atom | Tile)[][],
-                private readonly molecule: (Atom | Tile)[][]) {
-        console.assert(map.length > 0)
-        console.assert(molecule.length > 0)
-    }
+export type FieldIterator = (field: Field, x: number, y: number) => void
 
-    numRows(): number {
-        return this.map.length
-    }
-
-    numColumns(): number {
-        return this.map[0].length
-    }
-
-    moveAtom(source: MovableAtom, target: Position): void {
-        const atom: Atom = <Atom>this.map[source.y][source.x]
-        this.map[source.y][source.x] = Tile.None
-        this.map[target.y][target.x] = atom
-    }
-
-    isFieldEmpty(x: number, y: number): boolean {
-        if (y < 0 || y >= this.map.length || x < 0 || x >= this.map[0].length) return false
-        return this.map[y][x] === Tile.None
+export class Map2d {
+    constructor(private readonly data: Field[][]) {
+        console.assert(data.length > 0)
     }
 
     iterateFields(iterator: FieldIterator): void {
-        this.map.forEach((row: (Atom | Tile)[], y: number) =>
-            row.forEach((item: Atom | Tile, x: number) =>
-                iterator(item, x, y)))
+        this.data.forEach((row: Field[], y: number) =>
+            row.forEach((field: Field, x: number) =>
+                iterator(field, x, y)))
     }
 
-    clone(): Level {
-        return new Level(this.name, this.map.map(row => row.slice()), this.molecule)
+    setField(x: number, y: number, field: Field): void {
+        this.data[y][x] = field
+    }
+
+    getField(x: number, y: number): Field {
+        return this.data[y][x]
+    }
+
+    isFieldEmpty(x: number, y: number): boolean {
+        if (y < 0 || y >= this.numRows() || x < 0 || x >= this.numColumns()) return false
+        return this.data[y][x] === Tile.None
+    }
+
+    numRows(): number {
+        return this.data.length
+    }
+
+    numColumns(): number {
+        return this.data[0].length
+    }
+
+    clone(): Map2d {
+        return new Map2d(this.data.map(row => row.slice()))
     }
 
     print(): string {
-        return this.map.map(row => row.map(tile => {
+        return this.data.map(row => row.map(tile => {
             switch (tile) {
                 case Tile.None:
                     return " "
@@ -152,5 +153,43 @@ export class Level {
                     return `${tile.kind + 1}`
             }
         }).join("")).join("\n")
+    }
+}
+
+export class Level {
+    constructor(readonly name: string,
+                readonly arena: Map2d,
+                readonly molecule: Map2d) {
+    }
+
+    moveAtom(source: MovableAtom, target: Position): void {
+        const atom: Atom = <Atom>this.arena.getField(source.x, source.y)
+        this.arena.setField(source.x, source.y, Tile.None)
+        this.arena.setField(target.x, target.y, atom)
+    }
+
+    isSolved(): boolean {
+        const wyn = this.arena.numRows() - this.molecule.numRows()
+        const wxn = this.arena.numColumns() - this.molecule.numColumns()
+        for (let wy = 0; wy < wyn; wy++) {
+            for (let wx = 0; wx < wxn; wx++) {
+                if (this.isMolecule(wx, wy)) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    isMolecule(wx: number, wy: number): boolean {
+        for (let my = 0; my < this.molecule.numRows(); my++) {
+            for (let mx = 0; mx < this.molecule.numColumns(); mx++) {
+                const possiblyAtom = this.molecule.getField(mx, my)
+                if (possiblyAtom instanceof Atom && this.arena.getField(wx + mx, wy + my) !== possiblyAtom) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 }

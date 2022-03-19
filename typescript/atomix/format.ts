@@ -1,6 +1,6 @@
 // https://raw.githubusercontent.com/figlief/kp-atomix/master/docs/atomix-json-format.txt
 // Atomix level sets in JSON format.
-import {Atom, AtomKind, Bond, Connection, Level, Tile} from "./model.js"
+import {Atom, AtomKind, Bond, Connection, Level, Map2d, Tile} from "./model.js"
 
 export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
     const itemKindMap: Map<string, AtomKind> = new Map<string, AtomKind>([
@@ -65,8 +65,8 @@ export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
             levelItems.set(key, item)
             countItems++
         }
-        const mapFields = (data: string[]): (Tile | Atom)[][] => {
-            return data.map((row: string) => row.split("")
+        const mapFields = (data: string[]): Map2d => {
+            return new Map2d(data.map((row: string) => row.split("")
                 .map((key: string) => {
                     switch (key) {
                         case ".":
@@ -80,7 +80,7 @@ export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
                             }
                             return atom
                     }
-                }))
+                })))
         }
         return new Level(level.name, mapFields(level['arena']), mapFields(level['molecule']))
     })
