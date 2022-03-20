@@ -132,12 +132,12 @@ export class GameContext implements ControlHost {
     async hidePreviewMove(commit: boolean) {
         if (this.movePreview.nonEmpty()) {
             const preview = this.movePreview.get()
+            this.movePreview = Options.None
             if (commit) {
                 console.log("start execution")
                 await this.executeMove(preview.movableAtom, preview.direction)
                 console.log(`isSolved: ${this.level.isSolved()}`)
             }
-            this.movePreview = Options.None
             this.render()
         }
     }
@@ -159,6 +159,20 @@ export class GameContext implements ControlHost {
     }
 
     private render(): void {
+        this.beginRender()
+        this.movableAtoms.forEach(movableAtom => {
+            this.context.save()
+            this.context.translate((movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE)
+            this.atomPainter.paint(this.context, movableAtom.atom, this.getConnected(movableAtom), TILE_SIZE)
+            this.context.restore()
+        })
+        if (this.movePreview.nonEmpty()) {
+            this.renderPreview(this.movePreview.get())
+        }
+        this.endRender()
+    }
+
+    private beginRender() {
         const arena = this.level.arena
         const width = arena.numColumns() * TILE_SIZE
         const height = arena.numRows() * TILE_SIZE
@@ -168,17 +182,11 @@ export class GameContext implements ControlHost {
         this.canvas.height = height * devicePixelRatio
         this.context.save()
         this.context.scale(devicePixelRatio, devicePixelRatio)
-        this.arenaPainter.paint(this.context, arena)
-        this.movableAtoms.forEach(movableAtom => {
-            this.context.save()
-            this.context.translate((movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE)
-            this.atomPainter.paint(this.context, movableAtom.atom, this.getConnected(movableAtom), TILE_SIZE)
-            this.context.restore()
-        })
+        this.arenaPainter.paint(this.context, this.level.arena)
+        return arena
+    }
 
-        if (this.movePreview.nonEmpty()) {
-            this.renderPreview(this.movePreview.get())
-        }
+    private endRender() {
         this.context.restore()
     }
 
@@ -194,20 +202,44 @@ export class GameContext implements ControlHost {
         return atoms
     }
 
-    private async executeMove(movableAtom: MovableAtom, direction: Direction): Promise<void> {
-        const fromX = movableAtom.x
-        const fromY = movableAtom.y
-        const target = movableAtom.predictMove(direction)
-        if (target.x === fromX && target.y === fromY) return
+    private async executeMove(movingAtom: MovableAtom, direction: Direction): Promise<void> {
+        const fromX = movingAtom.x
+        const fromY = movingAtom.y
+        const target = movingAtom.predictMove(direction)
+        const toX = target.x
+        const toY = target.y
+        if (toX === fromX && toY === fromY) return
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
-        this.history.push(new HistoryStep(movableAtom, fromX, fromY, target.x, target.y))
+        this.history.push(new HistoryStep(movingAtom, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
         return new Promise((resolve) => {
+            const duration = 10
+            let frame = 0
+            const move = (phase: number): Point => {
+                phase = Math.pow(phase, 1.0 / 2.0)
+                return {
+                    x: fromX + phase * (toX - fromX),
+                    y: fromY + phase * (toY - fromY)
+                }
+            }
             const animate = () => {
-                if (movableAtom.x !== target.x || movableAtom.y !== target.y) {
-                    movableAtom.x += Math.sign(target.x - movableAtom.x)
-                    movableAtom.y += Math.sign(target.y - movableAtom.y)
-                    this.render()
+                if (frame < duration) {
+                    const point = move(++frame / duration)
+                    this.beginRender()
+                    this.movableAtoms.forEach(movableAtom => {
+                        this.context.save()
+                        if (movableAtom === movingAtom) {
+                            this.context.translate((point.x + 0.5) * TILE_SIZE, (point.y + 0.5) * TILE_SIZE)
+                        } else {
+                            this.context.translate((movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE)
+                        }
+                        this.atomPainter.paint(this.context, movableAtom.atom, this.getConnected(movableAtom), TILE_SIZE)
+                        this.context.restore()
+                    })
+                    if (this.movePreview.nonEmpty()) {
+                        this.renderPreview(this.movePreview.get())
+                    }
+                    this.endRender()
                     requestAnimationFrame(animate)
                 } else {
                     resolve()
@@ -259,20 +291,20 @@ export class GameContext implements ControlHost {
     private renderPreview(preview: MovePreview) {
         const movableAtom = preview.movableAtom
         const position = movableAtom.predictMove(preview.direction)
-        preview.render(this.context, position)
-        this.context.fillStyle = "rgba(255, 255, 255, 0.3)"
+        // preview.render(this.context, position)
+        this.context.fillStyle = "rgba(255, 255, 255, 0.2)"
         const y0 = Math.min(movableAtom.y, position.y)
         const y1 = Math.max(movableAtom.y, position.y)
         const x0 = Math.min(movableAtom.x, position.x)
         const x1 = Math.max(movableAtom.x, position.x)
         if (y0 === y1) {
-            for (let x = 1; x < x1 - x0; x++) {
+            for (let x = 0; x <= x1 - x0; x++) {
                 this.context.beginPath()
                 this.context.arc((x0 + x + 0.5) * TILE_SIZE, (y0 + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
                 this.context.fill()
             }
         } else if (x0 === x1) {
-            for (let y = 1; y < y1 - y0; y++) {
+            for (let y = 0; y <= y1 - y0; y++) {
                 this.context.beginPath()
                 this.context.arc((x0 + 0.5) * TILE_SIZE, (y0 + y + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
                 this.context.fill()
