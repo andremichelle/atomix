@@ -308,6 +308,15 @@ export class NumericStepper implements Stepper {
     }
 }
 
+export interface Point {
+    x: number
+    y: number
+}
+
+export enum Direction {
+    Up, Right, Down, Left
+}
+
 export class ArrayUtils {
     static fill<T>(n: number, factory: (index: number) => T): T[] {
         const array: T[] = []

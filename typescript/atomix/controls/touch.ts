@@ -1,13 +1,14 @@
-import {Direction, MovableAtom} from "./model.js"
-import {Game} from "./game.js"
-import {Events, Terminable, Terminator} from "../lib/common.js"
+import {Direction, Events, Terminable, Terminator} from "../../lib/common.js"
+import {ControlHost} from "./controls.js"
+import {MovableAtom} from "../game.js"
+import {TILE_SIZE} from "../design.js"
 
-export class TouchControls implements Terminable {
+export class TouchControl implements Terminable {
     private readonly terminator: Terminator = new Terminator()
 
     private controlling: boolean = false
 
-    constructor(private readonly game: Game) {
+    constructor(private readonly host: ControlHost) {
         this.installUserInput()
     }
 
@@ -17,7 +18,7 @@ export class TouchControls implements Terminable {
     }
 
     installUserInput() {
-        const targetElement = this.game.getElement()
+        const targetElement = this.host.getTargetElement()
         this.terminator.with(Events.bindEventListener(targetElement, "touchstart", (startEvent: TouchEvent) => {
             startEvent.preventDefault()
             if (this.controlling) {
@@ -27,24 +28,27 @@ export class TouchControls implements Terminable {
             console.assert(targetTouches.length > 0)
             const touch = targetTouches[0]
             const rect = targetElement.getBoundingClientRect()
-            const movableAtom = this.nearestMovableAtom(touch.clientX - rect.left, touch.clientY - rect.top)
+            const movableAtom: MovableAtom = this.host.nearestMovableAtom(touch.clientX - rect.left, touch.clientY - rect.top)
             if (movableAtom === null) {
                 return
             }
             const target = startEvent.target
             const startTouch = startEvent.targetTouches[0]
             const startIdentifier = startTouch.identifier
-            const startX = startTouch.clientX
-            const startY = startTouch.clientY
+            const startX = (movableAtom.x + 0.5) * TILE_SIZE
+            const startY = (movableAtom.y + 0.5) * TILE_SIZE
             const move = (event: TouchEvent) => {
                 const moveTouch: Touch = Array.from(event.targetTouches).find(touch => touch.identifier === startIdentifier)
                 console.assert(moveTouch !== undefined)
-                const direction = this.resolveDirection(moveTouch.clientX - startX, moveTouch.clientY - startY)
-                this.game.showPreviewMove(movableAtom, direction)
+                const rect = targetElement.getBoundingClientRect()
+                const touchX = moveTouch.clientX - rect.left
+                const touchY = moveTouch.clientY - rect.top
+                const direction = this.resolveDirection(touchX - startX, touchY - startY)
+                this.host.showPreviewMove(movableAtom, direction)
             }
             const stop = () => {
                 this.controlling = false
-                this.game.hidePreviewMove()
+                this.host.hidePreviewMove()
                 target.removeEventListener("touchmove", move)
                 target.removeEventListener("touchend", stop)
                 target.removeEventListener("touchcancel", stop)
@@ -52,26 +56,9 @@ export class TouchControls implements Terminable {
             target.addEventListener("touchmove", move)
             target.addEventListener("touchend", stop)
             target.addEventListener("touchcancel", stop)
+            move(startEvent)
             this.controlling = true
         }))
-    }
-
-    nearestMovableAtom(x: number, y: number): MovableAtom | null {
-        let nearestDistance: number = Number.MAX_VALUE
-        let nearestMovableAtom: MovableAtom = null
-        this.game.getMovableAtoms().forEach(movableAtom => {
-            const dx = x - movableAtom.x * Game.TILE_SIZE
-            const dy = y - movableAtom.y * Game.TILE_SIZE
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance > Game.TILE_SIZE * 2) {
-                return
-            }
-            if (nearestDistance > distance) {
-                nearestDistance = distance
-                nearestMovableAtom = movableAtom
-            }
-        })
-        return nearestMovableAtom
     }
 
     resolveDirection(x: number, y: number): Direction {

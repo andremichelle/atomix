@@ -1,6 +1,6 @@
 import {Boot, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
-import {fetchAndTranslate} from "./atomix/format.js"
-import {Level} from "./atomix/model.js"
+import {fetchAndTranslate} from "./atomix/model/format.js"
+import {Level} from "./atomix/model/model.js"
 import {Game} from "./atomix/game.js"
 
 const showProgress = (() => {
@@ -22,7 +22,11 @@ const showProgress = (() => {
     const levels: Level[] = await fetchAndTranslate("https://raw.githubusercontent.com/figlief/kp-atomix/master/levels/original.json")
     // --- BOOT ENDS ---
 
-    new Game(document.querySelector("canvas"), levels[0]).update()
+    const game = new Game(document.querySelector("canvas"), levels[3])
+    game.update()
+
+    document.getElementById("undo-button").addEventListener("click", () => game.undo())
+    document.getElementById("redo-button").addEventListener("click", () => game.redo())
 
     // prevent dragging entire document on mobile
     document.addEventListener('touchmove', (event: TouchEvent) => event.preventDefault(), {passive: false})

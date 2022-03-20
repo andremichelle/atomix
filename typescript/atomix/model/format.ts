@@ -1,6 +1,6 @@
 // https://raw.githubusercontent.com/figlief/kp-atomix/master/docs/atomix-json-format.txt
 // Atomix level sets in JSON format.
-import {Atom, AtomKind, Bond, Connection, Level, Map2d, Tile} from "./model.js"
+import {Atom, AtomKind, Bond, Connector, Level, Map2d, Tile} from "./model.js"
 
 export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
     const itemKindMap: Map<string, AtomKind> = new Map<string, AtomKind>([
@@ -27,23 +27,23 @@ export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
         ["K", AtomKind.CrystalK],
         ["L", AtomKind.CrystalL]
     ])
-    const bondTypesMap: Map<string, Connection> = new Map<string, Connection>([
-        ["a", new Connection(Bond.Top, 1)],
-        ["b", new Connection(Bond.TopRight, 1)],
-        ["c", new Connection(Bond.Right, 1)],
-        ["d", new Connection(Bond.DownRight, 1)],
-        ["e", new Connection(Bond.Down, 1)],
-        ["f", new Connection(Bond.DownLeft, 1)],
-        ["g", new Connection(Bond.Left, 1)],
-        ["h", new Connection(Bond.TopLeft, 1)],
-        ["A", new Connection(Bond.Top, 2)],
-        ["B", new Connection(Bond.Right, 2)],
-        ["C", new Connection(Bond.Down, 2)],
-        ["D", new Connection(Bond.Left, 2)],
-        ["E", new Connection(Bond.Top, 3)],
-        ["F", new Connection(Bond.Right, 3)],
-        ["G", new Connection(Bond.Down, 3)],
-        ["H", new Connection(Bond.Left, 3)]
+    const bondTypesMap: Map<string, Connector> = new Map<string, Connector>([
+        ["a", new Connector(Bond.Top, 1)],
+        ["b", new Connector(Bond.TopRight, 1)],
+        ["c", new Connector(Bond.Right, 1)],
+        ["d", new Connector(Bond.DownRight, 1)],
+        ["e", new Connector(Bond.Down, 1)],
+        ["f", new Connector(Bond.DownLeft, 1)],
+        ["g", new Connector(Bond.Left, 1)],
+        ["h", new Connector(Bond.TopLeft, 1)],
+        ["A", new Connector(Bond.Top, 2)],
+        ["B", new Connector(Bond.Right, 2)],
+        ["C", new Connector(Bond.Down, 2)],
+        ["D", new Connector(Bond.Left, 2)],
+        ["E", new Connector(Bond.Top, 3)],
+        ["F", new Connector(Bond.Right, 3)],
+        ["G", new Connector(Bond.Down, 3)],
+        ["H", new Connector(Bond.Left, 3)]
     ])
     // make them unique
     const uniqueItemsMap: Map<string, Atom> = new Map<string, Atom>()

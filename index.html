@@ -12,13 +12,18 @@
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
     <link rel="icon" href="favicon.ico" type=“image/x-icon”>
     <link rel="shortcut icon" href="./favicon.ico" type=“image/x-icon”>
-    <link rel="preload" href="./fonts/Open_Sans/static/OpenSans/OpenSans-Regular.ttf" as="font" type="font/ttf"
-          crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
     <link href="./bin/main.css" rel="stylesheet"/>
     <script src="./bin/main.js" type="module"></script>
 </head>
 <body>
 <main class="invisible">
+    <div class="history" style="position: absolute; right: 0;">
+        <button id="undo-button" style="font-size: 24px;">undo</button>
+        <button id="redo-button" style="font-size: 24px;">redo</button>
+    </div>
     <div class="play-field">
         <canvas></canvas>
     </div>
