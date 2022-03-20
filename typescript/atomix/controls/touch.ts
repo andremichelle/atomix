@@ -48,7 +48,7 @@ export class TouchControl implements Terminable {
             }
             const stop = () => {
                 this.controlling = false
-                this.host.hidePreviewMove()
+                this.host.hidePreviewMove(true)
                 target.removeEventListener("touchmove", move)
                 target.removeEventListener("touchend", stop)
                 target.removeEventListener("touchcancel", stop)

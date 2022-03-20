@@ -8,5 +8,5 @@ export interface ControlHost {
 
     showPreviewMove(movableAtom: MovableAtom, direction: Direction)
 
-    hidePreviewMove()
+    hidePreviewMove(commit: boolean)
 }

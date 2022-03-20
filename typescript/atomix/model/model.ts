@@ -42,6 +42,10 @@ export class Bond {
 
     constructor(readonly xAxis: Adjacent, readonly yAxis: Adjacent) {
     }
+
+    toString(): string {
+        return `Bond{xAxis: ${this.xAxis}, yAxis: ${this.yAxis}}`
+    }
 }
 
 export class Connector {
@@ -58,6 +62,10 @@ export class Connector {
     equals(other: Connector): boolean {
         return this.bond === other.bond && this.order === other.order
     }
+
+    toString(): string {
+        return `Connector{bond: ${this.bond}, order: ${this.order}`
+    }
 }
 
 export class Atom {
@@ -71,6 +79,10 @@ export class Atom {
             if (!this.connectors[i].equals(other.connectors[i])) return false
         }
         return true
+    }
+
+    toString(): string {
+        return `Atom{kind: ${this.kind}, connectors: ${this.connectors.join(",")}`
     }
 }
 

@@ -5,6 +5,11 @@ main
   height: 100%
   display: flex
 
+  div.history
+    top: 2vmin
+    left: 2vmin
+    position: absolute
+
   div.play-field
     width: 100%
     height: 100%
@@ -15,6 +20,21 @@ main
     font-size: calc(var(--size) * 4)
     white-space: pre-line
     line-height: 0.6
+    pointer-events: none
 
     canvas
+      pointer-events: all
       background-color: #1A1A1A
+
+  div.preview
+    top: 50%
+    right: 2vmin
+    transform: translate(0, -50%)
+    perspective: 300px
+    position: absolute
+    pointer-events: none
+
+    canvas
+      transform: rotate3d(0, 1, 0, -33deg)
+      background-color: rgba(255, 255, 255, 0.1)
+      box-shadow: 0 4px 4px 0 rgba(black, 0.2)

@@ -89,14 +89,14 @@ class HistoryStep {
 export class Game implements ControlHost {
     private readonly context = this.canvas.getContext("2d")
     private readonly atomRenderer = new AtomPainter(this.context, TILE_SIZE)
-    private readonly atomsMap: Map<Atom, MovableAtom> = new Map()
+    private readonly movableAtoms: MovableAtom[] = []
     private readonly history: HistoryStep[] = []
 
     private movePreview: Option<MovePreview> = Options.None
     private historyPointer = 0
 
     constructor(private readonly canvas: HTMLCanvasElement, private readonly level: Level) {
-        this.atomsMap = this.createMovableAtoms()
+        this.movableAtoms = this.createMovableAtoms()
         this.renderPreview()
         new TouchControl(this)
     }
@@ -108,7 +108,7 @@ export class Game implements ControlHost {
     nearestMovableAtom(x: number, y: number): MovableAtom | null {
         let nearestDistance: number = Number.MAX_VALUE
         let nearestMovableAtom: MovableAtom = null
-        this.atomsMap.forEach((movableAtom: MovableAtom) => {
+        this.movableAtoms.forEach((movableAtom: MovableAtom) => {
             const dx = x - (movableAtom.x + 0.5) * TILE_SIZE
             const dy = y - (movableAtom.y + 0.5) * TILE_SIZE
             const distance = Math.sqrt(dx * dx + dy * dy)
@@ -126,12 +126,14 @@ export class Game implements ControlHost {
         this.update()
     }
 
-    hidePreviewMove() {
+    hidePreviewMove(commit: boolean) {
         if (this.movePreview.nonEmpty()) {
             const preview = this.movePreview.get()
-            this.executeMove(preview.movableAtom, preview.direction)
+            if (commit) {
+                this.executeMove(preview.movableAtom, preview.direction)
+                console.log(`isSolved: ${this.level.isSolved()}`)
+            }
             this.movePreview = Options.None
-            console.log(`isSolved: ${this.level.isSolved()}`)
             this.update()
         }
     }
@@ -154,13 +156,15 @@ export class Game implements ControlHost {
                     y * TILE_SIZE,
                     TILE_SIZE,
                     TILE_SIZE)
-            } else if (entry instanceof Atom) {
-                this.context.save()
-                this.context.translate((x + 0.5) * TILE_SIZE, (y + 0.5) * TILE_SIZE)
-                this.atomRenderer.paint(entry, this.getConnected(this.atomsMap.get(entry)))
-                this.context.restore()
             }
         })
+        this.movableAtoms.forEach(movableAtom => {
+            this.context.save()
+            this.context.translate((movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE)
+            this.atomRenderer.paint(movableAtom.atom, this.getConnected(movableAtom))
+            this.context.restore()
+        })
+
         if (this.movePreview.nonEmpty()) {
             const preview: MovePreview = this.movePreview.get()
             const movableAtom = preview.movableAtom
@@ -205,11 +209,13 @@ export class Game implements ControlHost {
         this.update()
     }
 
-    private createMovableAtoms(): Map<Atom, MovableAtom> {
-        const atoms: Map<Atom, MovableAtom> = new Map()
+    private createMovableAtoms(): MovableAtom[] {
+        const atoms: MovableAtom[] = []
+        let count = 0
         this.level.arena.iterateFields((maybeAtom, x, y) => {
             if (maybeAtom instanceof Atom) {
-                atoms.set(maybeAtom, new MovableAtom(this.level, maybeAtom, x, y))
+                atoms.push(new MovableAtom(this.level, maybeAtom, x, y))
+                count++
             }
         })
         return atoms
@@ -244,19 +250,20 @@ export class Game implements ControlHost {
         const context = canvas.getContext("2d")
         const numRows = this.level.molecule.numRows()
         const numColumns = this.level.molecule.numColumns()
-        const width = numColumns * TILE_SIZE
-        const height = numRows * TILE_SIZE
+        const size = 24
+        const width = numColumns * size
+        const height = numRows * size
         canvas.width = width * devicePixelRatio
         canvas.height = height * devicePixelRatio
         canvas.style.width = `${width}px`
         canvas.style.height = `${height}px`
-        const atomPainter = new AtomPainter(context, TILE_SIZE)
+        const atomPainter = new AtomPainter(context, size)
         context.save()
         context.scale(devicePixelRatio, devicePixelRatio)
         this.level.molecule.iterateFields((maybeAtom, x, y) => {
             if (maybeAtom instanceof Atom) {
                 context.save()
-                context.translate((x + 0.5) * TILE_SIZE, (y + 0.5) * TILE_SIZE)
+                context.translate((x + 0.5) * size, (y + 0.5) * size)
                 atomPainter.paint(maybeAtom, new Set<Connector>(maybeAtom.connectors))
                 context.restore()
             }

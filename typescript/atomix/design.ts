@@ -1,7 +1,6 @@
 import {Atom, Connector, resolveAtomName} from "./model/model.js"
-import {Polygon} from "../lib/canvas.js"
 
-export const TILE_SIZE = 64
+export const TILE_SIZE = 48
 
 export class AtomPainter {
     constructor(private readonly context: CanvasRenderingContext2D,
@@ -12,33 +11,39 @@ export class AtomPainter {
         this.context.strokeStyle = null
         this.context.fillStyle = "#666"
         this.context.beginPath()
-        const radius = this.size * 0.4
+        const radius = this.size * 0.33
         atom.connectors.forEach(connector => this.paintConnectors(connector, connected.has(connector)))
-        this.context.fillStyle = "#666"
-        this.context.fill(Polygon.rounded(Polygon.vertices(8, radius, Math.PI / 8.0), radius / 3))
-
-        this.context.fillStyle = "#999"
-        this.context.fill(Polygon.rounded(Polygon.vertices(8, radius * 0.75, Math.PI / 8.0), radius / 3 * 0.75))
+        const gradient = this.context.createRadialGradient(0.0, 0.0, 0.0, 0.0, 0.0, radius)
+        gradient.addColorStop(0.00, "#333")
+        gradient.addColorStop(0.55, "#333")
+        gradient.addColorStop(0.85, "#AAA")
+        gradient.addColorStop(0.95, "#AAA")
+        gradient.addColorStop(1.00, "#333")
+        this.context.fillStyle = gradient
+        this.context.beginPath()
+        this.context.arc(0.0, 0.0, radius, 0.0, Math.PI * 2.0)
+        this.context.fill()
 
         resolveAtomName(atom.kind).ifPresent(name => {
             this.context.fillStyle = "#FFF"
             this.context.textAlign = "center"
             this.context.textBaseline = "middle"
-            this.context.font = "100 24px Inter"
+            this.context.font = `100 ${this.size * 0.25}px Inter`
             this.context.fillText(name, 0, 0)
         })
     }
 
     private paintConnectors(connection: Connector, connected: boolean): void {
-        const bondThickness = 5
-        const bondDistance = 7
-        const radius = this.size * (connected ? 0.5 : 0.44)
+        const bondThickness = this.size * 0.07
+        const bondDistance = this.size * 0.10
 
         this.context.lineWidth = bondThickness
         this.context.lineCap = "butt"
 
         const nx = connection.bond.xAxis
         const ny = connection.bond.yAxis
+        const nn = Math.sqrt(nx * nx + ny * ny)
+        const length = this.size * (connected ? 0.5 : 0.5 / nn)
         for (let order = 0; order < connection.order; order++) {
             const offset = order * bondDistance - (connection.order - 1) * bondDistance * 0.5
             const min = offset - bondThickness * 0.5
@@ -50,7 +55,7 @@ export class AtomPainter {
             this.context.strokeStyle = gradient
             this.context.beginPath()
             this.context.moveTo(-ny * offset, nx * offset)
-            this.context.lineTo(-ny * offset + nx * radius, nx * offset + ny * radius)
+            this.context.lineTo(-ny * offset + nx * length, nx * offset + ny * length)
             this.context.stroke()
         }
     }

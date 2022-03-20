@@ -22,7 +22,7 @@ const showProgress = (() => {
     const levels: Level[] = await fetchAndTranslate("https://raw.githubusercontent.com/figlief/kp-atomix/master/levels/original.json")
     // --- BOOT ENDS ---
 
-    const game = new Game(document.querySelector("canvas"), levels[1])
+    const game = new Game(document.querySelector("canvas"), levels[13])
     game.update()
 
     document.getElementById("undo-button").addEventListener("click", () => game.undo())
