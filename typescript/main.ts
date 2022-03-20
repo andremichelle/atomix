@@ -1,8 +1,8 @@
-import {Boot, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
+import {Boot, Dependency, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
 import {fetchAndTranslate} from "./atomix/model/format.js"
-import {Level} from "./atomix/model/model.js"
-import {Game} from "./atomix/game.js"
+import {GameContext} from "./atomix/game.js"
 import {ArenaPainter, AtomPainter} from "./atomix/design.js"
+import {Level} from "./atomix/model/model.js"
 
 const showProgress = (() => {
     const progress: SVGSVGElement = document.querySelector("svg.preloader")
@@ -18,15 +18,15 @@ const showProgress = (() => {
     const boot = new Boot()
     boot.addObserver(boot => showProgress(boot.normalizedPercentage()))
     boot.registerProcess(preloadImagesOfCssFile("./bin/main.css"))
+    boot.registerProcess(document["fonts"].load('10pt "Amatica SC"'))
+    const arenaPainter: Dependency<ArenaPainter> = boot.registerProcess(ArenaPainter.load())
+    const atomPainter: Dependency<AtomPainter> = boot.registerProcess(AtomPainter.load())
+    const levels: Dependency<Level[]> = boot.registerProcess(fetchAndTranslate("https://raw.githubusercontent.com/figlief/kp-atomix/master/levels/original.json"))
     const context = newAudioContext()
     await boot.waitForCompletion()
-    const arenaPainter = await ArenaPainter.load()
-    const atomPainter = await AtomPainter.load()
-    const levels: Level[] = await fetchAndTranslate("https://raw.githubusercontent.com/figlief/kp-atomix/master/levels/original.json")
     // --- BOOT ENDS ---
 
-    const game = new Game(document.querySelector("canvas"), arenaPainter, atomPainter, levels[0])
-    game.render()
+    const game = new GameContext(document.querySelector("canvas"), arenaPainter.get(), atomPainter.get(), levels.get()[0])
 
     document.getElementById("undo-button").addEventListener("click", () => game.undo())
     document.getElementById("redo-button").addEventListener("click", () => game.redo())

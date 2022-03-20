@@ -46,12 +46,12 @@ export class TouchControl implements Terminable {
                 const direction = this.resolveDirection(touchX - startX, touchY - startY)
                 this.host.showPreviewMove(movableAtom, direction)
             }
-            const stop = () => {
-                this.controlling = false
-                this.host.hidePreviewMove(true)
+            const stop = async () => {
                 target.removeEventListener("touchmove", move)
                 target.removeEventListener("touchend", stop)
                 target.removeEventListener("touchcancel", stop)
+                await this.host.hidePreviewMove(true)
+                this.controlling = false
             }
             target.addEventListener("touchmove", move)
             target.addEventListener("touchend", stop)

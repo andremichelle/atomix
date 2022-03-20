@@ -86,7 +86,7 @@ class HistoryStep {
     }
 }
 
-export class Game implements ControlHost {
+export class GameContext implements ControlHost {
     private readonly context = this.canvas.getContext("2d")
     private readonly movableAtoms: MovableAtom[] = []
     private readonly history: HistoryStep[] = []
@@ -99,8 +99,9 @@ export class Game implements ControlHost {
                 private readonly atomPainter: AtomPainter,
                 private readonly level: Level) {
         this.movableAtoms = this.createMovableAtoms()
-        this.renderMolecule()
+        this.renderMoleculePreview()
         new TouchControl(this)
+        this.render()
     }
 
     getTargetElement(): HTMLElement {
@@ -128,11 +129,12 @@ export class Game implements ControlHost {
         this.render()
     }
 
-    hidePreviewMove(commit: boolean) {
+    async hidePreviewMove(commit: boolean) {
         if (this.movePreview.nonEmpty()) {
             const preview = this.movePreview.get()
             if (commit) {
-                this.executeMove(preview.movableAtom, preview.direction)
+                console.log("start execution")
+                await this.executeMove(preview.movableAtom, preview.direction)
                 console.log(`isSolved: ${this.level.isSolved()}`)
             }
             this.movePreview = Options.None
@@ -140,7 +142,23 @@ export class Game implements ControlHost {
         }
     }
 
-    render(): void {
+    undo(): boolean {
+        if (this.historyPointer === 0) {
+            return
+        }
+        this.history[--this.historyPointer].revert()
+        this.render()
+    }
+
+    redo(): boolean {
+        if (this.historyPointer === this.history.length) {
+            return
+        }
+        this.history[this.historyPointer++].execute()
+        this.render()
+    }
+
+    private render(): void {
         const arena = this.level.arena
         const width = arena.numColumns() * TILE_SIZE
         const height = arena.numRows() * TILE_SIZE
@@ -164,22 +182,6 @@ export class Game implements ControlHost {
         this.context.restore()
     }
 
-    undo(): boolean {
-        if (this.historyPointer === 0) {
-            return
-        }
-        this.history[--this.historyPointer].revert()
-        this.render()
-    }
-
-    redo(): boolean {
-        if (this.historyPointer === this.history.length) {
-            return
-        }
-        this.history[this.historyPointer++].execute()
-        this.render()
-    }
-
     private createMovableAtoms(): MovableAtom[] {
         const atoms: MovableAtom[] = []
         let count = 0
@@ -192,14 +194,27 @@ export class Game implements ControlHost {
         return atoms
     }
 
-    private executeMove(movableAtom: MovableAtom, direction: Direction): void {
+    private async executeMove(movableAtom: MovableAtom, direction: Direction): Promise<void> {
         const fromX = movableAtom.x
         const fromY = movableAtom.y
         const target = movableAtom.predictMove(direction)
         if (target.x === fromX && target.y === fromY) return
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
-        this.history.push(new HistoryStep(movableAtom, fromX, fromY, target.x, target.y).execute())
+        this.history.push(new HistoryStep(movableAtom, fromX, fromY, target.x, target.y))
         this.historyPointer = this.history.length
+        return new Promise((resolve) => {
+            const animate = () => {
+                if (movableAtom.x !== target.x || movableAtom.y !== target.y) {
+                    movableAtom.x += Math.sign(target.x - movableAtom.x)
+                    movableAtom.y += Math.sign(target.y - movableAtom.y)
+                    this.render()
+                    requestAnimationFrame(animate)
+                } else {
+                    resolve()
+                }
+            }
+            animate()
+        })
     }
 
     private getConnected(movableAtom: MovableAtom): Set<Connector> {
@@ -216,7 +231,7 @@ export class Game implements ControlHost {
         return set
     }
 
-    private renderMolecule() {
+    private renderMoleculePreview() {
         const canvas: HTMLCanvasElement = document.querySelector(".preview canvas")
         const context = canvas.getContext("2d")
         const numRows = this.level.molecule.numRows()
