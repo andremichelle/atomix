@@ -25,16 +25,14 @@ main
     canvas
       pointer-events: all
       background-color: #1A1A1A
+      box-shadow: 0 1vmin 1vmin 0 rgba(0, 0, 0, 0.4)
 
   div.preview
     top: 50%
-    right: 2vmin
+    right: 10vmin
     transform: translate(0, -50%)
-    perspective: 300px
     position: absolute
     pointer-events: none
-
-    canvas
-      transform: rotate3d(0, 1, 0, -33deg)
-      background-color: rgba(255, 255, 255, 0.1)
-      box-shadow: 0 4px 4px 0 rgba(black, 0.2)
+    background-color: rgba(black, 0.4)
+    border-radius: 8px
+    padding: 16px

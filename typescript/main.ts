@@ -2,6 +2,7 @@ import {Boot, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
 import {fetchAndTranslate} from "./atomix/model/format.js"
 import {Level} from "./atomix/model/model.js"
 import {Game} from "./atomix/game.js"
+import {ArenaPainter, AtomPainter} from "./atomix/design.js"
 
 const showProgress = (() => {
     const progress: SVGSVGElement = document.querySelector("svg.preloader")
@@ -19,11 +20,13 @@ const showProgress = (() => {
     boot.registerProcess(preloadImagesOfCssFile("./bin/main.css"))
     const context = newAudioContext()
     await boot.waitForCompletion()
+    const arenaPainter = await ArenaPainter.load()
+    const atomPainter = await AtomPainter.load()
     const levels: Level[] = await fetchAndTranslate("https://raw.githubusercontent.com/figlief/kp-atomix/master/levels/original.json")
     // --- BOOT ENDS ---
 
-    const game = new Game(document.querySelector("canvas"), levels[13])
-    game.update()
+    const game = new Game(document.querySelector("canvas"), arenaPainter, atomPainter, levels[0])
+    game.render()
 
     document.getElementById("undo-button").addEventListener("click", () => game.undo())
     document.getElementById("redo-button").addEventListener("click", () => game.redo())
