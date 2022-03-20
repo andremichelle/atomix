@@ -141,7 +141,7 @@ export class Level {
         const wxn = this.arena.numColumns() - this.molecule.numColumns()
         for (let wy = 0; wy < wyn; wy++) {
             for (let wx = 0; wx < wxn; wx++) {
-                if (this.isMolecule(wx, wy)) {
+                if (this.matchesMolecule(wx, wy)) {
                     return true
                 }
             }
@@ -149,7 +149,7 @@ export class Level {
         return false
     }
 
-    isMolecule(wx: number, wy: number): boolean {
+    private matchesMolecule(wx: number, wy: number): boolean {
         for (let my = 0; my < this.molecule.numRows(); my++) {
             for (let mx = 0; mx < this.molecule.numColumns(); mx++) {
                 const possiblyAtom = this.molecule.getField(mx, my)

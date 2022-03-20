@@ -97,6 +97,7 @@ export class Game implements ControlHost {
 
     constructor(private readonly canvas: HTMLCanvasElement, private readonly level: Level) {
         this.atomsMap = this.createMovableAtoms()
+        this.renderPreview()
         new TouchControl(this)
     }
 
@@ -108,12 +109,10 @@ export class Game implements ControlHost {
         let nearestDistance: number = Number.MAX_VALUE
         let nearestMovableAtom: MovableAtom = null
         this.atomsMap.forEach((movableAtom: MovableAtom) => {
-            const dx = x - movableAtom.x * TILE_SIZE
-            const dy = y - movableAtom.y * TILE_SIZE
+            const dx = x - (movableAtom.x + 0.5) * TILE_SIZE
+            const dy = y - (movableAtom.y + 0.5) * TILE_SIZE
             const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance > TILE_SIZE * 2) {
-                return null
-            }
+            if (distance > TILE_SIZE) return
             if (nearestDistance > distance) {
                 nearestDistance = distance
                 nearestMovableAtom = movableAtom
@@ -230,13 +229,38 @@ export class Game implements ControlHost {
         console.assert(movableAtom !== undefined)
         const set = new Set<Connector>()
         movableAtom.atom.connectors.forEach(connector => {
-            const field = this.level.arena.getField(movableAtom.x + connector.bond.xAxis, movableAtom.y + connector.bond.yAxis)
-            if (field instanceof Atom) {
-                if (field.connectors.some(other => other.matches(connector))) {
+            const maybeAtom = this.level.arena.getField(movableAtom.x + connector.bond.xAxis, movableAtom.y + connector.bond.yAxis)
+            if (maybeAtom instanceof Atom) {
+                if (maybeAtom.connectors.some(other => other.matches(connector))) {
                     set.add(connector)
                 }
             }
         })
         return set
+    }
+
+    private renderPreview() {
+        const canvas: HTMLCanvasElement = document.querySelector(".preview canvas")
+        const context = canvas.getContext("2d")
+        const numRows = this.level.molecule.numRows()
+        const numColumns = this.level.molecule.numColumns()
+        const width = numColumns * TILE_SIZE
+        const height = numRows * TILE_SIZE
+        canvas.width = width * devicePixelRatio
+        canvas.height = height * devicePixelRatio
+        canvas.style.width = `${width}px`
+        canvas.style.height = `${height}px`
+        const atomPainter = new AtomPainter(context, TILE_SIZE)
+        context.save()
+        context.scale(devicePixelRatio, devicePixelRatio)
+        this.level.molecule.iterateFields((maybeAtom, x, y) => {
+            if (maybeAtom instanceof Atom) {
+                context.save()
+                context.translate((x + 0.5) * TILE_SIZE, (y + 0.5) * TILE_SIZE)
+                atomPainter.paint(maybeAtom, new Set<Connector>(maybeAtom.connectors))
+                context.restore()
+            }
+        })
+        context.restore()
     }
 }
