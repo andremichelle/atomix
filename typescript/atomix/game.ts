@@ -99,7 +99,7 @@ export class Game implements ControlHost {
                 private readonly atomPainter: AtomPainter,
                 private readonly level: Level) {
         this.movableAtoms = this.createMovableAtoms()
-        this.renderPreview()
+        this.renderMolecule()
         new TouchControl(this)
     }
 
@@ -159,29 +159,7 @@ export class Game implements ControlHost {
         })
 
         if (this.movePreview.nonEmpty()) {
-            const preview: MovePreview = this.movePreview.get()
-            const movableAtom = preview.movableAtom
-            const position = movableAtom.predictMove(preview.direction)
-            preview.render(this.context, position)
-            this.context.fillStyle = "rgba(255, 255, 255, 0.3)"
-            const y0 = Math.min(movableAtom.y, position.y)
-            const y1 = Math.max(movableAtom.y, position.y)
-            const x0 = Math.min(movableAtom.x, position.x)
-            const x1 = Math.max(movableAtom.x, position.x)
-            if (y0 === y1) {
-                for (let x = 1; x < x1 - x0; x++) {
-                    this.context.beginPath()
-                    this.context.arc((x0 + x + 0.5) * TILE_SIZE, (y0 + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
-                    this.context.fill()
-                }
-            } else if (x0 === x1) {
-                for (let y = 1; y < y1 - y0; y++) {
-                    this.context.beginPath()
-                    this.context.arc((x0 + 0.5) * TILE_SIZE, (y0 + y + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
-                    this.context.fill()
-                }
-            }
-            this.context.fillStyle = "white"
+            this.renderPreview(this.movePreview.get())
         }
         this.context.restore()
     }
@@ -238,7 +216,7 @@ export class Game implements ControlHost {
         return set
     }
 
-    private renderPreview() {
+    private renderMolecule() {
         const canvas: HTMLCanvasElement = document.querySelector(".preview canvas")
         const context = canvas.getContext("2d")
         const numRows = this.level.molecule.numRows()
@@ -261,5 +239,29 @@ export class Game implements ControlHost {
             }
         })
         context.restore()
+    }
+
+    private renderPreview(preview: MovePreview) {
+        const movableAtom = preview.movableAtom
+        const position = movableAtom.predictMove(preview.direction)
+        preview.render(this.context, position)
+        this.context.fillStyle = "rgba(255, 255, 255, 0.3)"
+        const y0 = Math.min(movableAtom.y, position.y)
+        const y1 = Math.max(movableAtom.y, position.y)
+        const x0 = Math.min(movableAtom.x, position.x)
+        const x1 = Math.max(movableAtom.x, position.x)
+        if (y0 === y1) {
+            for (let x = 1; x < x1 - x0; x++) {
+                this.context.beginPath()
+                this.context.arc((x0 + x + 0.5) * TILE_SIZE, (y0 + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
+                this.context.fill()
+            }
+        } else if (x0 === x1) {
+            for (let y = 1; y < y1 - y0; y++) {
+                this.context.beginPath()
+                this.context.arc((x0 + 0.5) * TILE_SIZE, (y0 + y + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
+                this.context.fill()
+            }
+        }
     }
 }
