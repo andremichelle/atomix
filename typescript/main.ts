@@ -17,8 +17,8 @@ const showProgress = (() => {
     // --- BOOT STARTS ---
     const boot = new Boot()
     boot.addObserver(boot => showProgress(boot.normalizedPercentage()))
+    boot.registerFont('Inter', 'url(./fonts/Inter/static/Inter-Regular.ttf)')
     boot.registerProcess(preloadImagesOfCssFile("./bin/main.css"))
-    boot.registerProcess(document["fonts"].load('10pt "Amatica SC"'))
     const arenaPainter: Dependency<ArenaPainter> = boot.registerProcess(ArenaPainter.load())
     const atomPainter: Dependency<AtomPainter> = boot.registerProcess(AtomPainter.load())
     const levels: Dependency<Level[]> = boot.registerProcess(fetchAndTranslate("https://raw.githubusercontent.com/figlief/kp-atomix/master/levels/original.json"))
@@ -27,7 +27,6 @@ const showProgress = (() => {
     // --- BOOT ENDS ---
 
     const game = new GameContext(document.querySelector("canvas"), arenaPainter.get(), atomPainter.get(), levels.get()[0])
-
     document.getElementById("undo-button").addEventListener("click", () => game.undo())
     document.getElementById("redo-button").addEventListener("click", () => game.redo())
 

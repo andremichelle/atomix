@@ -61,6 +61,13 @@ export class Boot implements Observable<Boot> {
         this.observable.terminate()
     }
 
+    registerFont(name: string, url: string): Dependency<FontFace> {
+        return this.registerProcess(document.fonts.ready
+            .then((faceSet: FontFaceSet) => new FontFace(name, url)
+                .load()
+                .then(fontFace => faceSet.add(fontFace))))
+    }
+
     registerProcess<T>(promise: Promise<T>): Dependency<T> {
         console.assert(!this.completed, "Cannot register processes when boot is already completed.")
         this.totalTasks++

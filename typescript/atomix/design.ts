@@ -74,7 +74,7 @@ export class AtomPainter {
             context.fillStyle = "rgba(255, 255, 255, 0.6)"
             context.textAlign = "center"
             context.textBaseline = "middle"
-            context.font = `100 ${size * 0.25}px Inter`
+            context.font = `normal ${size * 0.25}px "Inter"`
             context.fillText(name, 0, 0)
         })
     }
