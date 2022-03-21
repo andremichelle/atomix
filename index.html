@@ -18,15 +18,27 @@
 </head>
 <body>
 <main class="invisible">
-    <div class="history">
-        <button id="undo-button" style="font-size: 24px;">undo</button>
-        <button id="redo-button" style="font-size: 24px;">redo</button>
+    <div class="info">
+        <section>
+            <h1>ATOMIX</h1>
+            <div class="status">
+                <h2>SCORE:</h2><h2>000000</h2>
+                <h2>LEVEL:</h2><h2>01</h2>
+                <h2>TIME:</h2><h2>01:23</h2>
+            </div>
+        </section>
+    </div>
+    <div class="preview">
+        <h2>Molecule</h2>
+        <h3>Water</h3>
+        <canvas></canvas>
     </div>
     <div class="play-field">
         <canvas></canvas>
     </div>
-    <div class="preview">
-        <canvas></canvas>
+    <div class="history">
+        <button id="undo-button" style="font-size: 24px;">undo</button>
+        <button id="redo-button" style="font-size: 24px;">redo</button>
     </div>
 </main>
 <svg class="preloader" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">

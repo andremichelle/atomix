@@ -18,6 +18,7 @@ const showProgress = (() => {
     const boot = new Boot()
     boot.addObserver(boot => showProgress(boot.normalizedPercentage()))
     boot.registerFont('Inter', 'url(./fonts/Inter/static/Inter-Regular.ttf)')
+    boot.registerFont('PressStart2P', 'url(./fonts/Press_Start_2P/PressStart2P-Regular.ttf)')
     boot.registerProcess(preloadImagesOfCssFile("./bin/main.css"))
     const arenaPainter: Dependency<ArenaPainter> = boot.registerProcess(ArenaPainter.load())
     const atomPainter: Dependency<AtomPainter> = boot.registerProcess(AtomPainter.load())
@@ -26,7 +27,7 @@ const showProgress = (() => {
     await boot.waitForCompletion()
     // --- BOOT ENDS ---
 
-    const game = new GameContext(document.querySelector("canvas"), arenaPainter.get(), atomPainter.get(), levels.get()[0])
+    const game = new GameContext(document.querySelector(".play-field canvas"), arenaPainter.get(), atomPainter.get(), levels.get()[0])
     document.getElementById("undo-button").addEventListener("click", () => game.undo())
     document.getElementById("redo-button").addEventListener("click", () => game.redo())
 

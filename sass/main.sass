@@ -1,18 +1,56 @@
 @import common
 
+$panel-color: #202020
+
 main
   width: 100%
   height: 100%
-  display: flex
+  display: grid
+  grid-template: 1fr 1fr / 33vw 1fr
+  grid-auto-rows: minmax(min-content, max-content)
+  gap: 1px
+  align-items: center
+  justify-content: center
+  font-family: 'PressStart2P', sans-serif
 
-  div.history
-    top: 2vmin
-    left: 2vmin
-    position: absolute
+  h1, h2
+    margin: 0
+    padding: 0
+
+  h1
+    text-transform: uppercase
+    font-size: 3.5vw
+
+  h2
+    text-transform: uppercase
+    font-size: 1.5vw
+
+  h3
+    text-transform: uppercase
+    font-size: 1vw
+
+  div.info
+    grid-area: 1 / 1
+    background-color: $panel-color
+    height: 100%
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    border-radius: 0 0 3px 0
+
+    section
+      display: flex
+      flex-direction: column
+      row-gap: 2vw
+
+      .status
+        display: grid
+        grid-template: min-content / 8vw 1fr
+        row-gap: 1vw
 
   div.play-field
-    width: 100%
-    height: 100%
+    grid-area: 1 / 2 / 3 / 3
     display: flex
     align-items: center
     justify-content: center
@@ -21,18 +59,26 @@ main
     white-space: pre-line
     line-height: 0.6
     pointer-events: none
+    background-color: $panel-color
+    height: 100%
 
     canvas
       pointer-events: all
-      background-color: #1A1A1A
       box-shadow: 0 1vmin 1vmin 0 rgba(0, 0, 0, 0.4)
 
   div.preview
-    top: 50%
-    right: 10vmin
-    transform: translate(0, -50%)
-    position: absolute
+    grid-area: 2 / 1
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    row-gap: 1vw
     pointer-events: none
-    background-color: rgba(black, 0.4)
-    border-radius: 8px
-    padding: 16px
+    background-color: $panel-color
+    height: 100%
+    border-radius: 0 3px 0 0
+
+  div.history
+    top: 2vmin
+    right: 2vmin
+    position: absolute

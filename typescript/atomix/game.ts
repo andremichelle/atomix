@@ -268,7 +268,7 @@ export class GameContext implements ControlHost {
         const context = canvas.getContext("2d")
         const numRows = this.level.molecule.numRows()
         const numColumns = this.level.molecule.numColumns()
-        const size = 24
+        const size = 32
         const width = numColumns * size
         const height = numRows * size
         canvas.width = width * devicePixelRatio
