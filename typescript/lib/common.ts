@@ -1,7 +1,16 @@
 // noinspection JSUnusedGlobalSymbols
 
 import {ValueMapping} from "./mapping.js"
-import {Random} from "./math"
+import {Random} from "./math.js"
+
+export class Empty {
+    static Set = (() => {
+        const set = new Set<any>()
+        set.has = (_ => false)
+        set.add = (_ => set)
+        return set
+    })()
+}
 
 export interface Terminable {
     terminate(): void
@@ -326,6 +335,14 @@ export class ArrayUtils {
         return array
     }
 
+    static clear<T>(array: T[]) {
+        array.splice(0, array.length)
+    }
+
+    static replace<T>(target: T[], source: T[]): void {
+        target.splice.apply(target, [0, target.length, ...source])
+    }
+
     static shuffle(array: ArrayBufferLike, n: number, random: Random) {
         for (let i = 0; i < n; i++) {
             const element = array[i]
@@ -417,6 +434,21 @@ export class Waiting {
                 else requestAnimationFrame(callback)
             }
             requestAnimationFrame(callback)
+        })
+    }
+
+    static awaitAnimation(animate: ((phase: number) => void), numFrames: number): Promise<void> {
+        let frame = 0
+        return new Promise<void>(resolve => {
+            const run = () => {
+                if (++frame <= numFrames) {
+                    animate(frame / numFrames)
+                    requestAnimationFrame(run)
+                } else {
+                    resolve()
+                }
+            }
+            requestAnimationFrame(run)
         })
     }
 

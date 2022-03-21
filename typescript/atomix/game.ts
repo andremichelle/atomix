@@ -1,35 +1,35 @@
-import {Atom, Connector, Level, Tile} from "./model/model.js"
+import {Atom, Connector, Level, Map2d, Tile} from "./model/model.js"
 import {ControlHost} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
-import {Direction, Option, Options, Point} from "../lib/common.js"
+import {ArrayUtils, Direction, Empty, Option, Options, Point, Waiting} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./design.js"
+import {Easing} from "../lib/easing.js"
 
 export class MovableAtom implements Point {
-    constructor(private readonly level: Level,
+    constructor(private readonly arena: Map2d,
                 readonly atom: Atom,
                 public x: number,
                 public y: number) {
     }
 
     predictMove(direction: Direction): Point {
-        const arena = this.level.arena
         let x = this.x
         let y = this.y
         switch (direction) {
             case Direction.Up: {
-                while (arena.isFieldEmpty(x, y - 1)) y--
+                while (this.arena.isFieldEmpty(x, y - 1)) y--
                 break
             }
             case Direction.Down: {
-                while (arena.isFieldEmpty(x, y + 1)) y++
+                while (this.arena.isFieldEmpty(x, y + 1)) y++
                 break
             }
             case Direction.Left: {
-                while (arena.isFieldEmpty(x - 1, y)) x--
+                while (this.arena.isFieldEmpty(x - 1, y)) x--
                 break
             }
             case Direction.Right: {
-                while (arena.isFieldEmpty(x + 1, y)) x++
+                while (this.arena.isFieldEmpty(x + 1, y)) x++
                 break
             }
         }
@@ -37,12 +37,11 @@ export class MovableAtom implements Point {
     }
 
     moveTo(field: Point) {
-        const arena = this.level.arena
-        const atom: Atom = <Atom>arena.getField(this.x, this.y)
-        arena.setField(this.x, this.y, Tile.None)
+        const atom: Atom = <Atom>this.arena.getField(this.x, this.y)
+        this.arena.setField(this.x, this.y, Tile.None)
         this.x = field.x
         this.y = field.y
-        arena.setField(this.x, this.y, atom)
+        this.arena.setField(this.x, this.y, atom)
     }
 }
 
@@ -55,7 +54,7 @@ class MovePreview {
 
         const context = this.canvas.getContext("2d")
         context.translate(TILE_SIZE * 0.5, TILE_SIZE * 0.5)
-        this.painter.paint(context, movableAtom.atom, new Set(), TILE_SIZE)
+        this.painter.paint(context, movableAtom.atom, Empty.Set, 0, 0, TILE_SIZE)
     }
 
     render(context: CanvasRenderingContext2D, point: Point): void {
@@ -86,26 +85,99 @@ class HistoryStep {
     }
 }
 
-export class GameContext implements ControlHost {
+export class ArenaCanvas {
+    private readonly canvas = document.createElement("canvas")
     private readonly context = this.canvas.getContext("2d")
+
+    constructor(private readonly arenaPainter: ArenaPainter) {
+    }
+
+    resizeTo(width: number, height: number) {
+        this.canvas.width = width * devicePixelRatio
+        this.canvas.height = height * devicePixelRatio
+    }
+
+    get element(): HTMLElement {
+        return this.canvas
+    }
+
+    paint(arena: Map2d): void {
+        this.context.save()
+        this.context.scale(devicePixelRatio, devicePixelRatio)
+        this.arenaPainter.paint(this.context, arena)
+        this.context.restore()
+    }
+}
+
+export class AtomsCanvas {
+    private readonly canvas = document.createElement("canvas")
+    private readonly context = this.canvas.getContext("2d")
+
+    constructor() {
+    }
+
+    resizeTo(width: number, height: number) {
+        this.canvas.width = width * devicePixelRatio
+        this.canvas.height = height * devicePixelRatio
+    }
+
+    get element(): HTMLElement {
+        return this.canvas
+    }
+
+    clear(): void {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    }
+
+    paint(movableAtoms: MovableAtom[], renderer: ((context: CanvasRenderingContext2D, movableAtom: MovableAtom) => void)): void {
+        this.context.save()
+        this.context.scale(devicePixelRatio, devicePixelRatio)
+        movableAtoms.forEach(movableAtom => renderer(this.context, movableAtom))
+        this.context.restore()
+    }
+
+    showMovePreview(source: Point, target: Point) {
+        this.context.save()
+        this.context.scale(devicePixelRatio, devicePixelRatio)
+        this.context.strokeStyle = "rgba(255, 255, 255, 0.1)"
+        this.context.lineCap = "round"
+        this.context.lineWidth = TILE_SIZE / 4
+        const y0 = Math.min(source.y, target.y)
+        const y1 = Math.max(source.y, target.y)
+        const x0 = Math.min(source.x, target.x)
+        const x1 = Math.max(source.x, target.x)
+        this.context.beginPath()
+        this.context.moveTo((x0 + 0.5) * TILE_SIZE, (y0 + 0.5) * TILE_SIZE)
+        this.context.lineTo((x1 + 0.5) * TILE_SIZE, (y1 + 0.5) * TILE_SIZE)
+        this.context.stroke()
+        this.context.restore()
+    }
+}
+
+export class GameContext implements ControlHost {
+    private readonly arenaCanvas: ArenaCanvas = new ArenaCanvas(this.arenaPainter)
+    private readonly atomsCanvas: AtomsCanvas = new AtomsCanvas()
     private readonly movableAtoms: MovableAtom[] = []
     private readonly history: HistoryStep[] = []
 
     private movePreview: Option<MovePreview> = Options.None
     private historyPointer = 0
 
-    constructor(private readonly canvas: HTMLCanvasElement,
+    private level: Option<Level> = Options.None
+    private levelPointer = 0
+
+    constructor(private readonly element: HTMLElement,
                 private readonly arenaPainter: ArenaPainter,
                 private readonly atomPainter: AtomPainter,
-                private readonly level: Level) {
-        this.movableAtoms = this.createMovableAtoms()
-        this.renderMoleculePreview()
+                private readonly levels: Level[]) {
+        this.initLevel(this.levels[this.levelPointer])
+        this.element.appendChild(this.arenaCanvas.element)
+        this.element.appendChild(this.atomsCanvas.element)
         new TouchControl(this)
-        this.render()
     }
 
     getTargetElement(): HTMLElement {
-        return this.canvas
+        return this.element
     }
 
     nearestMovableAtom(x: number, y: number): MovableAtom | null {
@@ -126,7 +198,7 @@ export class GameContext implements ControlHost {
 
     showPreviewMove(movableAtom: MovableAtom, direction: Direction) {
         this.movePreview = Options.valueOf(new MovePreview(this.atomPainter, movableAtom, direction))
-        this.render()
+        this.renderStaticAtoms()
     }
 
     async hidePreviewMove(commit: boolean) {
@@ -136,9 +208,11 @@ export class GameContext implements ControlHost {
             if (commit) {
                 console.log("start execution")
                 await this.executeMove(preview.movableAtom, preview.direction)
-                console.log(`isSolved: ${this.level.isSolved()}`)
+                if (this.level.get().isSolved()) {
+                    await this.showSolvedAnimation()
+                }
             }
-            this.render()
+            this.renderStaticAtoms()
         }
     }
 
@@ -147,7 +221,7 @@ export class GameContext implements ControlHost {
             return
         }
         this.history[--this.historyPointer].revert()
-        this.render()
+        this.renderStaticAtoms()
     }
 
     redo(): boolean {
@@ -155,51 +229,41 @@ export class GameContext implements ControlHost {
             return
         }
         this.history[this.historyPointer++].execute()
-        this.render()
+        this.renderStaticAtoms()
     }
 
-    private render(): void {
-        this.beginRender()
-        this.movableAtoms.forEach(movableAtom => {
-            this.context.save()
-            this.context.translate((movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE)
-            this.atomPainter.paint(this.context, movableAtom.atom, this.getConnected(movableAtom), TILE_SIZE)
-            this.context.restore()
+    private async showSolvedAnimation(): Promise<void> {
+        // TODO remove atoms one by one and add score
+
+        const boundingClientRect = this.element.getBoundingClientRect()
+        await Waiting.awaitAnimation(phase => {
+            phase = Easing.easeInQuad(phase)
+            this.element.style.top = `${-phase * boundingClientRect.bottom}px`
+        }, 20)
+
+        this.initLevel(this.levels[++this.levelPointer])
+
+        await Waiting.awaitAnimation(phase => {
+            phase = Easing.easeOutQuad(phase)
+            this.element.style.top = `${(1.0 - phase) * boundingClientRect.bottom}px`
+        }, 20)
+
+        return new Promise<void>(resolve => {
+            resolve()
         })
-        if (this.movePreview.nonEmpty()) {
-            this.renderPreview(this.movePreview.get())
-        }
-        this.endRender()
     }
 
-    private beginRender() {
-        const arena = this.level.arena
-        const width = arena.numColumns() * TILE_SIZE
-        const height = arena.numRows() * TILE_SIZE
-        this.canvas.style.width = `${width}px`
-        this.canvas.style.height = `${height}px`
-        this.canvas.width = width * devicePixelRatio
-        this.canvas.height = height * devicePixelRatio
-        this.context.save()
-        this.context.scale(devicePixelRatio, devicePixelRatio)
-        this.arenaPainter.paint(this.context, this.level.arena)
-        return arena
-    }
-
-    private endRender() {
-        this.context.restore()
-    }
-
-    private createMovableAtoms(): MovableAtom[] {
-        const atoms: MovableAtom[] = []
-        let count = 0
-        this.level.arena.iterateFields((maybeAtom, x, y) => {
-            if (maybeAtom instanceof Atom) {
-                atoms.push(new MovableAtom(this.level, maybeAtom, x, y))
-                count++
-            }
+    private renderStaticAtoms(): void {
+        this.atomsCanvas.clear()
+        this.movePreview.ifPresent(preview => {
+            const movableAtom = preview.movableAtom
+            const position = movableAtom.predictMove(preview.direction)
+            this.atomsCanvas.showMovePreview(movableAtom, position)
         })
-        return atoms
+        this.atomsCanvas.paint(this.movableAtoms, (context, movableAtom) => {
+            this.atomPainter.paint(context, movableAtom.atom, this.getConnected(movableAtom),
+                (movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE, TILE_SIZE)
+        })
     }
 
     private async executeMove(movingAtom: MovableAtom, direction: Direction): Promise<void> {
@@ -212,48 +276,31 @@ export class GameContext implements ControlHost {
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         this.history.push(new HistoryStep(movingAtom, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
-        return new Promise((resolve) => {
-            const duration = 10
-            let frame = 0
-            const move = (phase: number): Point => {
-                phase = Math.pow(phase, 1.0 / 2.0)
-                return {
-                    x: fromX + phase * (toX - fromX),
-                    y: fromY + phase * (toY - fromY)
-                }
-            }
-            const animate = () => {
-                if (frame < duration) {
-                    const point = move(++frame / duration)
-                    this.beginRender()
-                    this.movableAtoms.forEach(movableAtom => {
-                        this.context.save()
-                        if (movableAtom === movingAtom) {
-                            this.context.translate((point.x + 0.5) * TILE_SIZE, (point.y + 0.5) * TILE_SIZE)
-                        } else {
-                            this.context.translate((movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE)
-                        }
-                        this.atomPainter.paint(this.context, movableAtom.atom, this.getConnected(movableAtom), TILE_SIZE)
-                        this.context.restore()
-                    })
-                    if (this.movePreview.nonEmpty()) {
-                        this.renderPreview(this.movePreview.get())
+        return Waiting.awaitAnimation(phase => {
+            phase = Easing.easeInOutQuad(phase)
+            this.atomsCanvas.clear()
+            this.atomsCanvas.paint(this.movableAtoms, (context, movableAtom) => {
+                if (movableAtom === movingAtom) {
+                    const target = {
+                        x: fromX + phase * (toX - fromX),
+                        y: fromY + phase * (toY - fromY)
                     }
-                    this.endRender()
-                    requestAnimationFrame(animate)
+                    this.atomPainter.paint(context, movableAtom.atom, Empty.Set,
+                        (target.x + 0.5) * TILE_SIZE, (target.y + 0.5) * TILE_SIZE, TILE_SIZE)
                 } else {
-                    resolve()
+                    this.atomPainter.paint(context, movableAtom.atom, this.getConnected(movableAtom),
+                        (movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE, TILE_SIZE)
                 }
-            }
-            animate()
-        })
+            })
+        }, 16)
     }
 
     private getConnected(movableAtom: MovableAtom): Set<Connector> {
+        console.assert(this.level.nonEmpty())
         console.assert(movableAtom !== undefined)
         const set = new Set<Connector>()
         movableAtom.atom.connectors.forEach(connector => {
-            const maybeAtom = this.level.arena.getField(movableAtom.x + connector.bond.xAxis, movableAtom.y + connector.bond.yAxis)
+            const maybeAtom = this.level.get().arena.getField(movableAtom.x + connector.bond.xAxis, movableAtom.y + connector.bond.yAxis)
             if (maybeAtom instanceof Atom) {
                 if (maybeAtom.connectors.some(other => other.matches(connector))) {
                     set.add(connector)
@@ -263,11 +310,43 @@ export class GameContext implements ControlHost {
         return set
     }
 
-    private renderMoleculePreview() {
+    private initLevel(level: Level): void {
+        this.level = Options.valueOf(level)
+        this.historyPointer = 0
+        ArrayUtils.clear(this.history)
+
+        const arena = level.arena
+        ArrayUtils.replace(this.movableAtoms, this.initMovableAtoms(arena))
+        this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
+        this.arenaCanvas.paint(arena)
+        this.renderMoleculePreview(level.molecule)
+        this.renderStaticAtoms()
+    }
+
+    private resizeTo(width: number, height: number) {
+        this.arenaCanvas.resizeTo(width, height)
+        this.atomsCanvas.resizeTo(width, height)
+        this.element.style.width = `${width}px`
+        this.element.style.height = `${height}px`
+    }
+
+    private initMovableAtoms(arena: Map2d): MovableAtom[] {
+        const atoms: MovableAtom[] = []
+        let count = 0
+        arena.iterateFields((maybeAtom, x, y) => {
+            if (maybeAtom instanceof Atom) {
+                atoms.push(new MovableAtom(arena, maybeAtom, x, y))
+                count++
+            }
+        })
+        return atoms
+    }
+
+    private renderMoleculePreview(molecule: Map2d) {
         const canvas: HTMLCanvasElement = document.querySelector(".preview canvas")
         const context = canvas.getContext("2d")
-        const numRows = this.level.molecule.numRows()
-        const numColumns = this.level.molecule.numColumns()
+        const numRows = molecule.numRows()
+        const numColumns = molecule.numColumns()
         const size = 36
         const width = numColumns * size
         const height = numRows * size
@@ -277,38 +356,12 @@ export class GameContext implements ControlHost {
         canvas.style.height = `${height}px`
         context.save()
         context.scale(devicePixelRatio, devicePixelRatio)
-        this.level.molecule.iterateFields((maybeAtom, x, y) => {
+        molecule.iterateFields((maybeAtom, x, y) => {
             if (maybeAtom instanceof Atom) {
-                context.save()
-                context.translate((x + 0.5) * size, (y + 0.5) * size)
-                this.atomPainter.paint(context, maybeAtom, new Set<Connector>(maybeAtom.connectors), size)
-                context.restore()
+                this.atomPainter.paint(context, maybeAtom, new Set<Connector>(maybeAtom.connectors),
+                    (x + 0.5) * size, (y + 0.5) * size, size)
             }
         })
         context.restore()
-    }
-
-    private renderPreview(preview: MovePreview) {
-        const movableAtom = preview.movableAtom
-        const position = movableAtom.predictMove(preview.direction)
-        // preview.render(this.context, position)
-        this.context.fillStyle = "rgba(255, 255, 255, 0.2)"
-        const y0 = Math.min(movableAtom.y, position.y)
-        const y1 = Math.max(movableAtom.y, position.y)
-        const x0 = Math.min(movableAtom.x, position.x)
-        const x1 = Math.max(movableAtom.x, position.x)
-        if (y0 === y1) {
-            for (let x = 0; x <= x1 - x0; x++) {
-                this.context.beginPath()
-                this.context.arc((x0 + x + 0.5) * TILE_SIZE, (y0 + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
-                this.context.fill()
-            }
-        } else if (x0 === x1) {
-            for (let y = 0; y <= y1 - y0; y++) {
-                this.context.beginPath()
-                this.context.arc((x0 + 0.5) * TILE_SIZE, (y0 + y + 0.5) * TILE_SIZE, 3, 0.0, Math.PI * 2.0)
-                this.context.fill()
-            }
-        }
     }
 }

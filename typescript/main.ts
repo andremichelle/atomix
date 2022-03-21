@@ -27,7 +27,7 @@ const showProgress = (() => {
     await boot.waitForCompletion()
     // --- BOOT ENDS ---
 
-    const game = new GameContext(document.querySelector(".play-field canvas"), arenaPainter.get(), atomPainter.get(), levels.get()[0])
+    const game = new GameContext(document.querySelector(".play-field .canvas"), arenaPainter.get(), atomPainter.get(), levels.get())
     document.getElementById("undo-button").addEventListener("click", () => game.undo())
     document.getElementById("redo-button").addEventListener("click", () => game.redo())
 

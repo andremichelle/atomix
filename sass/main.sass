@@ -1,6 +1,7 @@
 @import common
 
 $panel-color: #202020
+$gap: 0.25vw
 
 main
   width: 100%
@@ -8,7 +9,7 @@ main
   display: grid
   grid-template: 1fr 1fr / 33vw 1fr
   grid-auto-rows: minmax(min-content, max-content)
-  gap: 1px
+  gap: $gap
   align-items: center
   justify-content: center
   font-family: 'PressStart2P', sans-serif
@@ -18,7 +19,7 @@ main
     padding: 0
 
   h1
-    background: linear-gradient(orange , yellow, green, cyan, blue, violet)
+    background: linear-gradient(orange, yellow, green, cyan, blue, violet)
     -webkit-background-clip: text
     -webkit-text-fill-color: transparent
     text-transform: uppercase
@@ -43,7 +44,7 @@ main
     flex-direction: column
     align-items: center
     justify-content: center
-    border-radius: 0 0 3px 0
+    border-radius: 0 0 $gap 0
 
     section
       display: flex
@@ -68,9 +69,21 @@ main
     background-color: $panel-color
     height: 100%
 
-    canvas
+    div.canvas
+      position: relative
       pointer-events: all
       box-shadow: 0 1vmin 1vmin 0 rgba(0, 0, 0, 0.4)
+
+      canvas
+        top: 0
+        left: 0
+        right: 0
+        bottom: 0
+        width: 100%
+        height: 100%
+        position: absolute
+        pointer-events: none
+
 
   div.preview
     grid-area: 2 / 1
@@ -82,7 +95,7 @@ main
     pointer-events: none
     background-color: $panel-color
     height: 100%
-    border-radius: 0 3px 0 0
+    border-radius: 0 $gap 0 0
 
   div.history
     top: 2vmin
@@ -104,7 +117,7 @@ main
       text-transform: uppercase
       color: rgba(white, 0.6)
       background-color: $panel-color
-      box-shadow: 0 0 3px 0 rgba(white, 0.2) inset
+      box-shadow: 0 0 3vw 0 rgba(white, 0.2) inset
 
       &:active
         background-color: lighten($panel-color, 20)

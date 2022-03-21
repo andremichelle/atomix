@@ -20,9 +20,8 @@ export class ArenaPainter {
         return new ArenaPainter(floors, walls)
     }
 
-
-    constructor(readonly floors: ImageBitmap[],
-                readonly walls: ImageBitmap[]) {
+    constructor(private readonly floors: ImageBitmap[],
+                private readonly walls: ImageBitmap[]) {
     }
 
     paint(context: CanvasRenderingContext2D, arena: Map2d): void {
@@ -54,7 +53,9 @@ export class AtomPainter {
     constructor(private readonly images: ImageBitmap[]) {
     }
 
-    paint(context: CanvasRenderingContext2D, atom: Atom, connected: Set<Connector>, size: number): void {
+    paint(context: CanvasRenderingContext2D, atom: Atom, connected: Set<Connector>, x: number, y: number, size: number): void {
+        context.save()
+        context.translate(x, y)
         const radius = size * 0.33
         const shadowY = size / 5
         const gradient = context.createRadialGradient(0.0, shadowY, 0.0, 0.0, shadowY, radius)
@@ -64,9 +65,8 @@ export class AtomPainter {
         context.beginPath()
         context.arc(0.0, shadowY, radius, 0.0, Math.PI * 2.0)
         context.fill()
-
-        atom.connectors.forEach(connector => AtomPainter.paintConnectors(context, connector, connected.has(connector), size))
-
+        atom.connectors.forEach(connector => AtomPainter
+            .paintConnectors(context, connector, connected.has(connector), size))
         // Create Map for kind and images
         context.drawImage(this.images[atom.kind], -radius, -radius, radius * 2, radius * 2)
 
@@ -77,6 +77,7 @@ export class AtomPainter {
             context.font = `normal ${size * 0.25}px "Inter"`
             context.fillText(name, 0, 0)
         })
+        context.restore()
     }
 
     private static paintConnectors(context: CanvasRenderingContext2D, connection: Connector, connected: boolean, size: number): void {
