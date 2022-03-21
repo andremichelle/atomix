@@ -13,15 +13,21 @@ main
   justify-content: center
   font-family: 'PressStart2P', sans-serif
 
-  h1, h2
+  h1, h2, h3
     margin: 0
     padding: 0
 
   h1
+    background: linear-gradient(orange , yellow, green, cyan, blue, violet)
+    -webkit-background-clip: text
+    -webkit-text-fill-color: transparent
     text-transform: uppercase
     font-size: 3.5vw
 
   h2
+    background: linear-gradient(white, #AAA)
+    -webkit-background-clip: text
+    -webkit-text-fill-color: transparent
     text-transform: uppercase
     font-size: 1.5vw
 
@@ -46,7 +52,7 @@ main
 
       .status
         display: grid
-        grid-template: min-content / 8vw 1fr
+        grid-template: min-content / 9vw 1fr
         row-gap: 1vw
 
   div.play-field
@@ -82,3 +88,23 @@ main
     top: 2vmin
     right: 2vmin
     position: absolute
+    display: flex
+    column-gap: 0.25vw
+
+    button
+      appearance: none
+      outline: none
+      border: none
+      font-family: "Inter", sans-serif
+      font-size: 1vw
+      line-height: 1em
+      margin: 0
+      padding: 1vw
+      border-radius: 1vw
+      text-transform: uppercase
+      color: rgba(white, 0.6)
+      background-color: $panel-color
+      box-shadow: 0 0 3px 0 rgba(white, 0.2) inset
+
+      &:active
+        background-color: lighten($panel-color, 20)
