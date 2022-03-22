@@ -148,7 +148,8 @@ export class Map2d {
 }
 
 export class Level {
-    constructor(readonly name: string,
+    constructor(readonly id: string,
+                readonly name: string,
                 readonly arena: Map2d,
                 readonly molecule: Map2d,
                 readonly solution: Move[]) {

@@ -160,11 +160,15 @@ export class GameContext implements ControlHost {
     private readonly movableAtoms: MovableAtom[] = []
     private readonly history: HistoryStep[] = []
 
+    private readonly labelLevelId: HTMLElement = document.getElementById("level-id")
+    private readonly labelLevelName: HTMLElement = document.getElementById("level-name")
+
     private movePreview: Option<MovePreview> = Options.None
     private historyPointer = 0
 
     private level: Option<Level> = Options.None
     private levelPointer = 0
+
 
     constructor(private readonly element: HTMLElement,
                 private readonly arenaPainter: ArenaPainter,
@@ -250,13 +254,15 @@ export class GameContext implements ControlHost {
     }
 
     private async showSolvedAnimation(): Promise<void> {
+        await Hold.forFrames(120)
+
         this.movableAtoms.sort((a: MovableAtom, b: MovableAtom) => {
             if (a.y > b.y) return 1
             if (a.y < b.y) return -1
             return a.x - b.x
         })
 
-        console.log(this.movableAtoms.map(m => `${m.x}, ${m.y}`).join("\n"))
+        console.log(this.movableAtoms.map(m => `${m.x}, ${m.y}`).join("\n")) // disassembly in this order
 
         const boundingClientRect = this.element.getBoundingClientRect()
         await Hold.forAnimation(phase => {
@@ -341,6 +347,9 @@ export class GameContext implements ControlHost {
         this.level = Options.valueOf(level)
         this.historyPointer = 0
         ArrayUtils.clear(this.history)
+
+        this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
+        this.labelLevelName.textContent = level.name
 
         const arena = level.arena
         ArrayUtils.replace(this.movableAtoms, this.initMovableAtoms(arena))

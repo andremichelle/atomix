@@ -115,7 +115,7 @@ export const fetchAndTranslateLevels = async (url: string, solutions: Move[][]):
                     }
                 })))
         }
-        return new Level(level.name, mapFields(level['arena']), mapFields(level['molecule']), solutions[levelCount++])
+        return new Level(level.id, level.name, mapFields(level['arena']), mapFields(level['molecule']), solutions[levelCount++])
     })
     console.debug(`There are ${uniqueItemsMap.size} unique and ${atomsCount} overall items`)
     return levels
