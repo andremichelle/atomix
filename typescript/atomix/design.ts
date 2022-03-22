@@ -67,7 +67,7 @@ export class AtomPainter {
         context.fill()
         atom.connectors.forEach(connector => AtomPainter
             .paintConnectors(context, connector, connected.has(connector), size))
-        // Create Map for kind and images
+        // TODO Create Map for kind and images
         context.drawImage(this.images[atom.kind], -radius, -radius, radius * 2, radius * 2)
 
         resolveAtomName(atom.kind).ifPresent(name => {

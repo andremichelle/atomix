@@ -1,8 +1,40 @@
 // https://raw.githubusercontent.com/figlief/kp-atomix/master/docs/atomix-json-format.txt
 // Atomix level sets in JSON format.
-import {Atom, AtomKind, Bond, Connector, Level, Map2d, Tile} from "./model.js"
+import {Atom, AtomKind, Bond, Connector, Level, Map2d, Move, Tile} from "./model.js"
+import {Direction} from "../../lib/common.js"
 
-export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
+export const fetchAndTranslateSolutions = async (url: string): Promise<Move[][]> => {
+    const deserializeMove = (code: string): Move => {
+        const codeStart = "a".codePointAt(0)
+        const indices: number[] = code.split("").map(char => char.codePointAt(0) - codeStart)
+        const x0 = indices[1]
+        const y0 = indices[0]
+        const x1 = indices[3]
+        const y1 = indices[2]
+        return new Move(x0, y0, resolveDirection(x0, x1, y0, y1))
+    }
+
+    const resolveDirection = (x0: number, x1: number, y0: number, y1: number): Direction => {
+        if (x0 === x1) {
+            if (y1 < y0) return Direction.Up
+            else return Direction.Down
+        } else {
+            if (x1 < x0) return Direction.Left
+            else return Direction.Right
+        }
+    }
+    const solutions: Move[][] = []
+    return fetch(url).then(x => x.json()).then((json: any[]) => {
+        for (const jsonElement of json) {
+            if (jsonElement.level) {
+                solutions.push(jsonElement.history.match(/.{1,4}/g).map(code => deserializeMove(code)))
+            }
+        }
+        return solutions
+    })
+}
+
+export const fetchAndTranslateLevels = async (url: string, solutions: Move[][]): Promise<Level[]> => {
     const itemKindMap: Map<string, AtomKind> = new Map<string, AtomKind>([
         ["1", AtomKind.AtomHydrogen],
         ["2", AtomKind.AtomCarbon],
@@ -48,7 +80,8 @@ export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
     // make them unique
     const uniqueItemsMap: Map<string, Atom> = new Map<string, Atom>()
     const json: JSON = await fetch(url).then(x => x.json())
-    let countItems = 0
+    let atomsCount = 0
+    let levelCount = 0
     const levels: Level[] = json['levels'].map(level => {
         const levelItems: Map<string, Atom> = new Map<string, Atom>()
         const atomsFormat = level['atoms']
@@ -63,7 +96,7 @@ export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
                 throw new Error(`Cache has invalid entry for key ${uniqueID}. cache: ${cached}, item: ${item}`)
             }
             levelItems.set(key, item)
-            countItems++
+            atomsCount++
         }
         const mapFields = (data: string[]): Map2d => {
             return new Map2d(data.map((row: string) => row.split("")
@@ -82,8 +115,8 @@ export const fetchAndTranslate = async (url: string): Promise<Level[]> => {
                     }
                 })))
         }
-        return new Level(level.name, mapFields(level['arena']), mapFields(level['molecule']))
+        return new Level(level.name, mapFields(level['arena']), mapFields(level['molecule']), solutions[levelCount++])
     })
-    console.debug(`There are ${uniqueItemsMap.size} unique and ${countItems} overall items`)
+    console.debug(`There are ${uniqueItemsMap.size} unique and ${atomsCount} overall items`)
     return levels
 }

@@ -1,7 +1,7 @@
 import {Atom, Connector, Level, Map2d, Tile} from "./model/model.js"
 import {ControlHost} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
-import {ArrayUtils, Direction, Empty, Option, Options, Point, Waiting} from "../lib/common.js"
+import {ArrayUtils, Direction, Empty, Hold, Option, Options, Point} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./design.js"
 import {Easing} from "../lib/easing.js"
 
@@ -173,6 +173,11 @@ export class GameContext implements ControlHost {
         this.initLevel(this.levels[this.levelPointer])
         this.element.appendChild(this.arenaCanvas.element)
         this.element.appendChild(this.atomsCanvas.element)
+
+        document.getElementById("undo-button").addEventListener("click", () => this.undo())
+        document.getElementById("redo-button").addEventListener("click", () => this.redo())
+        document.getElementById("solve-button").addEventListener("click", () => this.solve())
+
         new TouchControl(this)
     }
 
@@ -208,15 +213,12 @@ export class GameContext implements ControlHost {
             if (commit) {
                 console.log("start execution")
                 await this.executeMove(preview.movableAtom, preview.direction)
-                if (this.level.get().isSolved()) {
-                    await this.showSolvedAnimation()
-                }
             }
             this.renderStaticAtoms()
         }
     }
 
-    undo(): boolean {
+    private undo(): boolean {
         if (this.historyPointer === 0) {
             return
         }
@@ -224,7 +226,7 @@ export class GameContext implements ControlHost {
         this.renderStaticAtoms()
     }
 
-    redo(): boolean {
+    private redo(): boolean {
         if (this.historyPointer === this.history.length) {
             return
         }
@@ -232,18 +234,39 @@ export class GameContext implements ControlHost {
         this.renderStaticAtoms()
     }
 
+    private async solve(): Promise<void> {
+        if (this.historyPointer !== 0) {
+            return
+        }
+        this.level.ifPresent(async level => {
+            for (const move of level.solution) {
+                const movableAtom: MovableAtom = this.movableAtoms.find(movableAtom => {
+                    return movableAtom.x === move.x && movableAtom.y === move.y
+                })
+                console.assert(movableAtom !== undefined)
+                await this.executeMove(movableAtom, move.direction)
+            }
+        })
+    }
+
     private async showSolvedAnimation(): Promise<void> {
-        // TODO remove atoms one by one and add score
+        this.movableAtoms.sort((a: MovableAtom, b: MovableAtom) => {
+            if (a.y > b.y) return 1
+            if (a.y < b.y) return -1
+            return a.x - b.x
+        })
+
+        console.log(this.movableAtoms.map(m => `${m.x}, ${m.y}`).join("\n"))
 
         const boundingClientRect = this.element.getBoundingClientRect()
-        await Waiting.awaitAnimation(phase => {
+        await Hold.forAnimation(phase => {
             phase = Easing.easeInQuad(phase)
             this.element.style.top = `${-phase * boundingClientRect.bottom}px`
         }, 20)
 
         this.initLevel(this.levels[++this.levelPointer])
 
-        await Waiting.awaitAnimation(phase => {
+        await Hold.forAnimation(phase => {
             phase = Easing.easeOutQuad(phase)
             this.element.style.top = `${(1.0 - phase) * boundingClientRect.bottom}px`
         }, 20)
@@ -276,7 +299,7 @@ export class GameContext implements ControlHost {
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         this.history.push(new HistoryStep(movingAtom, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
-        return Waiting.awaitAnimation(phase => {
+        await Hold.forAnimation(phase => {
             phase = Easing.easeInOutQuad(phase)
             this.atomsCanvas.clear()
             this.atomsCanvas.paint(this.movableAtoms, (context, movableAtom) => {
@@ -293,6 +316,10 @@ export class GameContext implements ControlHost {
                 }
             })
         }, 16)
+        if (this.level.get().isSolved()) {
+            await this.showSolvedAnimation()
+        }
+        return Promise.resolve()
     }
 
     private getConnected(movableAtom: MovableAtom): Set<Connector> {

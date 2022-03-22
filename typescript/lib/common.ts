@@ -422,7 +422,7 @@ export abstract class Settings<DATA> implements Observable<Settings<DATA>>, Seri
     }
 }
 
-export class Waiting {
+export class Hold {
     static forFrame(): Promise<void> {
         return new Promise(resolve => requestAnimationFrame(() => resolve()))
     }
@@ -437,7 +437,7 @@ export class Waiting {
         })
     }
 
-    static awaitAnimation(animate: ((phase: number) => void), numFrames: number): Promise<void> {
+    static forAnimation(animate: ((phase: number) => void), numFrames: number): Promise<void> {
         let frame = 0
         return new Promise<void>(resolve => {
             const run = () => {
@@ -453,11 +453,11 @@ export class Waiting {
     }
 
     static forAnimationComplete(element: Element): Promise<void> {
-        return Waiting.forEvents(element, "animationstart", "animationend")
+        return Hold.forEvents(element, "animationstart", "animationend")
     }
 
     static forTransitionComplete(element: Element): Promise<void> {
-        return Waiting.forEvents(element, "transitionstart", "transitionend")
+        return Hold.forEvents(element, "transitionstart", "transitionend")
     }
 
     static forEvent(element: Element, type: string): Promise<void> {

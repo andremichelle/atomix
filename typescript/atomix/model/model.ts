@@ -1,4 +1,4 @@
-import {Option, Options} from "../../lib/common.js"
+import {Direction, Option, Options} from "../../lib/common.js"
 
 export enum AtomKind {
     AtomHydrogen, AtomCarbon, AtomOxygen, AtomNitrogen, AtomSulphur,
@@ -86,6 +86,11 @@ export class Atom {
     }
 }
 
+export class Move {
+    constructor(readonly x: number, readonly y: number, readonly direction: Direction) {
+    }
+}
+
 export enum Tile {None, Wall}
 
 export type Field = Atom | Tile
@@ -145,7 +150,8 @@ export class Map2d {
 export class Level {
     constructor(readonly name: string,
                 readonly arena: Map2d,
-                readonly molecule: Map2d) {
+                readonly molecule: Map2d,
+                readonly solution: Move[]) {
     }
 
     isSolved(): boolean {
