@@ -1,0 +1,202 @@
+:root {
+  --size: min(1vw, 1vh);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  font-family: "Open Sans", sans-serif;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+  color: #eaeaea;
+  background-color: black;
+}
+
+html {
+  width: -webkit-fill-available;
+  height: -webkit-fill-available;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100vw;
+  min-height: 100vh;
+  /* mobile viewport bug fix */
+  min-width: -webkit-fill-available;
+  min-height: -webkit-fill-available;
+}
+
+* {
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.invisible {
+  display: none !important;
+}
+
+svg.preloader {
+  --percentage: 0.0;
+  --radius: 7;
+  width: 64px;
+  height: 64px;
+}
+svg.preloader.error circle {
+  stroke: #C30;
+}
+svg.preloader > circle.progress {
+  stroke-dasharray: calc(var(--radius) * 6.2831853);
+  stroke-dashoffset: calc(var(--radius) * 6.2831853 * (1 - var(--percentage)));
+}
+
+@keyframes atom-dispose {
+  0% {
+    opacity: 1;
+    filter: brightness(100%) blur(0);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(6400%) blur(32px);
+  }
+}
+main {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template: 1fr 1fr/33vw 1fr;
+  grid-auto-rows: minmax(min-content, max-content);
+  gap: 0.25vw;
+  align-items: center;
+  justify-content: center;
+  font-family: "PressStart2P", sans-serif;
+}
+main h1, main h2, main h3 {
+  margin: 0;
+  padding: 0;
+}
+main h1 {
+  background: linear-gradient(orange, yellow, green, cyan, blue, violet);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  font-size: 3.5vw;
+}
+main h2 {
+  background: linear-gradient(white, #AAA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  font-size: 1.5vw;
+}
+main h3 {
+  text-transform: uppercase;
+  font-size: 1vw;
+}
+main div.info {
+  grid-area: 1/1;
+  background-color: #1C1C1C;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 0 0.25vw 0;
+}
+main div.info section {
+  display: flex;
+  flex-direction: column;
+  row-gap: 2vw;
+}
+main div.info section .status {
+  display: grid;
+  grid-template: min-content/9vw 1fr;
+  row-gap: 1vw;
+}
+main div.play-field {
+  grid-area: 1/2/3/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: calc(var(--size) * 4);
+  white-space: pre-line;
+  line-height: 0.6;
+  pointer-events: none;
+  background-color: #1C1C1C;
+  height: 100%;
+}
+main div.play-field div.layers {
+  position: relative;
+  pointer-events: all;
+  box-shadow: 0 1vmin 2vmin 0 rgba(0, 0, 0, 0.8);
+}
+main div.play-field div.layers > canvas#background-layer, main div.play-field div.layers > div#atom-layer {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  pointer-events: none;
+}
+main div.play-field div.layers > div#atom-layer > canvas.atom-sprite {
+  top: 0;
+  left: 0;
+  position: absolute;
+  transition: transform 200ms ease-in-out;
+}
+main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.dispose {
+  animation: atom-dispose 333ms ease-out forwards;
+}
+main div.preview {
+  grid-area: 2/1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  row-gap: 1vw;
+  pointer-events: none;
+  background-color: #1C1C1C;
+  height: 100%;
+  border-radius: 0 0.25vw 0 0;
+}
+main div.history {
+  top: 2vmin;
+  right: 2vmin;
+  position: absolute;
+  display: flex;
+  column-gap: 0.25vw;
+}
+main div.history button {
+  appearance: none;
+  outline: none;
+  border: none;
+  font-family: "Inter", sans-serif;
+  font-size: 1vw;
+  line-height: 1em;
+  margin: 0;
+  padding: 1vw;
+  border-radius: 1vw;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  background-color: #1C1C1C;
+  box-shadow: 0 0 3vw 0 rgba(255, 255, 255, 0.2) inset;
+}
+main div.history button:active {
+  background-color: #4f4f4f;
+}
+
+/*# sourceMappingURL=main.css.map */
