@@ -1,0 +1,31 @@
+export enum Sound {
+    Move, Dock, Complete
+}
+
+export class SoundManager {
+    private readonly map: Map<Sound, AudioBuffer> = new Map()
+
+    constructor(private readonly context: AudioContext) {
+    }
+
+    load(): Promise<void>[] {
+        return [
+            this.register(Sound.Move, "samples/move.wav"),
+            this.register(Sound.Dock, "samples/dock.wav"),
+            this.register(Sound.Complete, "samples/complete.wav"),
+        ]
+    }
+
+    play(sound: Sound) {
+        const bufferSource = this.context.createBufferSource()
+        bufferSource.buffer = this.map.get(sound)
+        bufferSource.onended = () => bufferSource.disconnect()
+        bufferSource.connect(this.context.destination)
+        bufferSource.start()
+    }
+
+    private async register(sound: Sound, url: string): Promise<void> {
+        this.map.set(sound, await fetch(url).then(x => x.arrayBuffer()).then(x => this.context.decodeAudioData(x)))
+        return Promise.resolve()
+    }
+}

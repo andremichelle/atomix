@@ -4,6 +4,7 @@ import {TouchControl} from "./controls/touch.js"
 import {ArrayUtils, Direction, Empty, Hold, Option, Options, Point} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./design.js"
 import {Easing} from "../lib/easing.js"
+import {Sound, SoundManager} from "./sounds.js"
 
 export class MovableAtom implements Point {
     constructor(private readonly arena: Map2d,
@@ -169,8 +170,8 @@ export class GameContext implements ControlHost {
     private level: Option<Level> = Options.None
     private levelPointer = 0
 
-
     constructor(private readonly element: HTMLElement,
+                private readonly soundManager: SoundManager,
                 private readonly arenaPainter: ArenaPainter,
                 private readonly atomPainter: AtomPainter,
                 private readonly levels: Level[]) {
@@ -180,6 +181,7 @@ export class GameContext implements ControlHost {
 
         document.getElementById("undo-button").addEventListener("click", () => this.undo())
         document.getElementById("redo-button").addEventListener("click", () => this.redo())
+        document.getElementById("reset-button").addEventListener("click", () => this.reset())
         document.getElementById("solve-button").addEventListener("click", () => this.solve())
 
         new TouchControl(this)
@@ -238,6 +240,10 @@ export class GameContext implements ControlHost {
         this.renderStaticAtoms()
     }
 
+    private reset(): void {
+        this.initLevel(this.levels[this.levelPointer])
+    }
+
     private async solve(): Promise<void> {
         if (this.historyPointer !== 0) {
             return
@@ -249,6 +255,7 @@ export class GameContext implements ControlHost {
                 })
                 console.assert(movableAtom !== undefined)
                 await this.executeMove(movableAtom, move.direction)
+                await Hold.forFrames(12)
             }
         })
     }
@@ -305,6 +312,7 @@ export class GameContext implements ControlHost {
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         this.history.push(new HistoryStep(movingAtom, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
+        this.soundManager.play(Sound.Move)
         await Hold.forAnimation(phase => {
             phase = Easing.easeInOutQuad(phase)
             this.atomsCanvas.clear()
@@ -322,7 +330,10 @@ export class GameContext implements ControlHost {
                 }
             })
         }, 16)
+        this.soundManager.play(Sound.Dock)
         if (this.level.get().isSolved()) {
+            await Hold.forFrames(12)
+            this.soundManager.play(Sound.Complete)
             await this.showSolvedAnimation()
         }
         return Promise.resolve()
@@ -344,14 +355,17 @@ export class GameContext implements ControlHost {
     }
 
     private initLevel(level: Level): void {
+        level = level.clone()
+
         this.level = Options.valueOf(level)
+
         this.historyPointer = 0
         ArrayUtils.clear(this.history)
 
         this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
         this.labelLevelName.textContent = level.name
 
-        const arena = level.arena
+        const arena: Map2d = level.arena
         ArrayUtils.replace(this.movableAtoms, this.initMovableAtoms(arena))
         this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
         this.arenaCanvas.paint(arena)

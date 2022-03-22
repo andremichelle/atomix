@@ -3,6 +3,7 @@ import {fetchAndTranslateLevels, fetchAndTranslateSolutions} from "./atomix/mode
 import {GameContext} from "./atomix/game.js"
 import {ArenaPainter, AtomPainter} from "./atomix/design.js"
 import {Level} from "./atomix/model/model.js"
+import {SoundManager} from "./atomix/sounds.js"
 
 const showProgress = (() => {
         const progress: SVGSVGElement = document.querySelector("svg.preloader")
@@ -26,10 +27,12 @@ const showProgress = (() => {
     const levels: Dependency<Level[]> = boot.registerProcess(fetchAndTranslateLevels("../level/original.json",
         await fetchAndTranslateSolutions("../level/original-solutions.json")))
     const context = newAudioContext()
+    const soundManager = new SoundManager(context)
+    soundManager.load().forEach(promise => boot.registerProcess(promise))
     await boot.waitForCompletion()
     // --- BOOT ENDS ---
 
-    const game = new GameContext(document.querySelector(".play-field .canvas"), arenaPainter.get(), atomPainter.get(), levels.get())
+    const game = new GameContext(document.querySelector(".play-field .canvas"), soundManager, arenaPainter.get(), atomPainter.get(), levels.get())
 
     // prevent dragging entire document on mobile
     document.addEventListener('touchmove', (event: TouchEvent) => event.preventDefault(), {passive: false})

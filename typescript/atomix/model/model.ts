@@ -155,6 +155,10 @@ export class Level {
                 readonly solution: Move[]) {
     }
 
+    clone(): Level {
+        return new Level(this.id, this.name, this.arena.clone(), this.molecule, this.solution)
+    }
+
     isSolved(): boolean {
         const wyn = this.arena.numRows() - this.molecule.numRows()
         const wxn = this.arena.numColumns() - this.molecule.numColumns()
