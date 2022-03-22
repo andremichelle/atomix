@@ -1,5 +1,5 @@
 export enum Sound {
-    Move, Dock, Complete
+    Move, Dock, Complete, StartLevel, NextLevel
 }
 
 export class SoundManager {
@@ -13,6 +13,8 @@ export class SoundManager {
             this.register(Sound.Move, "samples/move.wav"),
             this.register(Sound.Dock, "samples/dock.wav"),
             this.register(Sound.Complete, "samples/complete.wav"),
+            this.register(Sound.StartLevel, "samples/start-level.wav"),
+            this.register(Sound.NextLevel, "samples/next-level.wav"),
         ]
     }
 

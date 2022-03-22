@@ -261,6 +261,7 @@ export class GameContext implements ControlHost {
     }
 
     private async showSolvedAnimation(): Promise<void> {
+        this.soundManager.play(Sound.Complete)
         await Hold.forFrames(120)
 
         this.movableAtoms.sort((a: MovableAtom, b: MovableAtom) => {
@@ -271,6 +272,7 @@ export class GameContext implements ControlHost {
 
         console.log(this.movableAtoms.map(m => `${m.x}, ${m.y}`).join("\n")) // disassembly in this order
 
+        const stopSound = this.soundManager.play(Sound.NextLevel)
         const boundingClientRect = this.element.getBoundingClientRect()
         await Hold.forAnimation(phase => {
             phase = Easing.easeInQuad(phase)
@@ -283,6 +285,9 @@ export class GameContext implements ControlHost {
             phase = Easing.easeOutQuad(phase)
             this.element.style.top = `${(1.0 - phase) * boundingClientRect.bottom}px`
         }, 20)
+
+        stopSound()
+        this.soundManager.play(Sound.StartLevel)
 
         return new Promise<void>(resolve => {
             resolve()
@@ -334,7 +339,6 @@ export class GameContext implements ControlHost {
         this.soundManager.play(Sound.Dock)
         if (this.level.get().isSolved()) {
             await Hold.forFrames(12)
-            this.soundManager.play(Sound.Complete)
             await this.showSolvedAnimation()
         }
         return Promise.resolve()
