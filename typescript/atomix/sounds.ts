@@ -16,12 +16,18 @@ export class SoundManager {
         ]
     }
 
-    play(sound: Sound) {
+    play(sound: Sound): () => void {
+        const gainNode = this.context.createGain()
         const bufferSource = this.context.createBufferSource()
         bufferSource.buffer = this.map.get(sound)
         bufferSource.onended = () => bufferSource.disconnect()
-        bufferSource.connect(this.context.destination)
+        bufferSource.connect(gainNode).connect(this.context.destination)
         bufferSource.start()
+        return () => {
+            const endTime = this.context.currentTime + 0.1
+            gainNode.gain.linearRampToValueAtTime(0.0, endTime)
+            bufferSource.stop(endTime)
+        }
     }
 
     private async register(sound: Sound, url: string): Promise<void> {

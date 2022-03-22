@@ -312,7 +312,7 @@ export class GameContext implements ControlHost {
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         this.history.push(new HistoryStep(movingAtom, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
-        this.soundManager.play(Sound.Move)
+        const stopMoveSound = this.soundManager.play(Sound.Move)
         await Hold.forAnimation(phase => {
             phase = Easing.easeInOutQuad(phase)
             this.atomsCanvas.clear()
@@ -330,6 +330,7 @@ export class GameContext implements ControlHost {
                 }
             })
         }, 16)
+        stopMoveSound()
         this.soundManager.play(Sound.Dock)
         if (this.level.get().isSolved()) {
             await Hold.forFrames(12)
