@@ -1,7 +1,7 @@
 import {Direction, Events, Terminable, Terminator} from "../../lib/common.js"
 import {ControlHost} from "./controls.js"
-import {MovableAtom} from "../game.js"
-import {TILE_SIZE} from "../design.js"
+import {AtomSprite} from "../display/sprites.js"
+import {TILE_SIZE} from "../display/painter.js"
 
 export class TouchControl implements Terminable {
     private readonly terminator: Terminator = new Terminator()
@@ -28,7 +28,7 @@ export class TouchControl implements Terminable {
             console.assert(targetTouches.length > 0)
             const touch = targetTouches[0]
             const rect = targetElement.getBoundingClientRect()
-            const movableAtom: MovableAtom = this.host.nearestMovableAtom(touch.clientX - rect.left, touch.clientY - rect.top)
+            const movableAtom: AtomSprite = this.host.nearestAtomSprite(touch.clientX - rect.left, touch.clientY - rect.top)
             if (movableAtom === null) {
                 return
             }

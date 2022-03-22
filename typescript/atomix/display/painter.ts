@@ -1,17 +1,8 @@
-import {Atom, Connector, Map2d, resolveAtomName, Tile} from "./model/model.js"
-import {ArrayUtils} from "../lib/common.js"
-import {Mulberry32, Random} from "../lib/math.js"
+import {Atom, Connector, Map2d, resolveAtomName, Tile} from "../model/model.js"
+import {loadImageBitmaps} from "../../lib/common.js"
+import {Mulberry32, Random} from "../../lib/math.js"
 
 export const TILE_SIZE = 48
-
-const loadImageBitmaps = async (factory: (index) => string, n): Promise<ImageBitmap[]> => {
-    return await Promise.all(ArrayUtils.fill(n, factory).map(path => new Promise<ImageBitmap>((resolve, reject) => {
-        const image = new Image()
-        image.onload = () => resolve(createImageBitmap(image))
-        image.onerror = (error) => reject(error)
-        image.src = path
-    })))
-}
 
 export class ArenaPainter {
     static async load(): Promise<ArenaPainter> {
@@ -69,7 +60,6 @@ export class AtomPainter {
             .paintConnectors(context, connector, connected.has(connector), size))
         // TODO Create Map for kind and images
         context.drawImage(this.images[atom.kind], -radius, -radius, radius * 2, radius * 2)
-
         resolveAtomName(atom.kind).ifPresent(name => {
             context.fillStyle = "rgba(255, 255, 255, 0.6)"
             context.textAlign = "center"
@@ -83,10 +73,8 @@ export class AtomPainter {
     private static paintConnectors(context: CanvasRenderingContext2D, connection: Connector, connected: boolean, size: number): void {
         const bondThickness = size * 0.07
         const bondDistance = size * 0.10
-
         context.lineWidth = bondThickness
         context.lineCap = "butt"
-
         const nx = connection.bond.xAxis
         const ny = connection.bond.yAxis
         const nn = Math.sqrt(nx * nx + ny * ny)

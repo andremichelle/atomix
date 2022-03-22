@@ -1,9 +1,20 @@
 import {Boot, Dependency, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
 import {fetchAndTranslateLevels, fetchAndTranslateSolutions} from "./atomix/model/format.js"
 import {GameContext} from "./atomix/game.js"
-import {ArenaPainter, AtomPainter} from "./atomix/design.js"
+import {ArenaPainter, AtomPainter} from "./atomix/display/painter.js"
 import {Level} from "./atomix/model/model.js"
 import {SoundManager} from "./atomix/sounds.js"
+
+/**
+ * TODO
+ * Add padding to atom-canvas for diagonal connections
+ * Prevent new inputs while running animations
+ * Nice reflection animation when puzzle is solved
+ * Moving duration in respect to distance?
+ * Bonus level graphics
+ * Proper layout and scaling for different media sizes
+ * Countdown for scoring
+ */
 
 const showProgress = (() => {
         const progress: SVGSVGElement = document.querySelector("svg.preloader")
@@ -12,8 +23,7 @@ const showProgress = (() => {
         return (percentage: number) => progress.style.setProperty("--percentage", percentage.toFixed(2))
     })()
 
-;
-(async () => {
+;(async () => {
     console.debug("booting...")
 
     // --- BOOT STARTS ---
@@ -32,7 +42,8 @@ const showProgress = (() => {
     await boot.waitForCompletion()
     // --- BOOT ENDS ---
 
-    const game = new GameContext(document.querySelector(".play-field .canvas"), soundManager, arenaPainter.get(), atomPainter.get(), levels.get())
+    const layerElement: HTMLElement = document.querySelector("div.play-field div.layers")
+    const game = new GameContext(layerElement, soundManager, arenaPainter.get(), atomPainter.get(), levels.get())
 
     // prevent dragging entire document on mobile
     document.addEventListener('touchmove', (event: TouchEvent) => event.preventDefault(), {passive: false})

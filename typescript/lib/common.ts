@@ -12,6 +12,16 @@ export class Empty {
     })()
 }
 
+export const loadImageBitmaps = async (factory: (index) => string, n): Promise<ImageBitmap[]> => {
+    return await Promise.all(ArrayUtils.fill(n, factory)
+        .map(path => new Promise<ImageBitmap>((resolve, reject) => {
+            const image = new Image()
+            image.onload = () => resolve(createImageBitmap(image))
+            image.onerror = (error) => reject(error)
+            image.src = path
+        })))
+}
+
 export interface Terminable {
     terminate(): void
 }

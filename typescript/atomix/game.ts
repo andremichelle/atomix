@@ -1,74 +1,19 @@
-import {Atom, Connector, Level, Map2d, Tile} from "./model/model.js"
+import {Atom, Connector, Level, Map2d} from "./model/model.js"
 import {ControlHost} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
-import {ArrayUtils, Direction, Empty, Hold, Option, Options, Point} from "../lib/common.js"
-import {ArenaPainter, AtomPainter, TILE_SIZE} from "./design.js"
+import {ArrayUtils, Direction, Hold, Option, Options} from "../lib/common.js"
+import {ArenaPainter, AtomPainter, TILE_SIZE} from "./display/painter.js"
 import {Easing} from "../lib/easing.js"
 import {Sound, SoundManager} from "./sounds.js"
-
-export class MovableAtom implements Point {
-    constructor(private readonly arena: Map2d,
-                readonly atom: Atom,
-                public x: number,
-                public y: number) {
-    }
-
-    predictMove(direction: Direction): Point {
-        let x = this.x
-        let y = this.y
-        switch (direction) {
-            case Direction.Up: {
-                while (this.arena.isFieldEmpty(x, y - 1)) y--
-                break
-            }
-            case Direction.Down: {
-                while (this.arena.isFieldEmpty(x, y + 1)) y++
-                break
-            }
-            case Direction.Left: {
-                while (this.arena.isFieldEmpty(x - 1, y)) x--
-                break
-            }
-            case Direction.Right: {
-                while (this.arena.isFieldEmpty(x + 1, y)) x++
-                break
-            }
-        }
-        return {x: x, y: y}
-    }
-
-    moveTo(field: Point) {
-        const atom: Atom = <Atom>this.arena.getField(this.x, this.y)
-        this.arena.setField(this.x, this.y, Tile.None)
-        this.x = field.x
-        this.y = field.y
-        this.arena.setField(this.x, this.y, atom)
-    }
-}
+import {AtomSprite} from "./display/sprites.js"
 
 class MovePreview {
-    readonly canvas: HTMLCanvasElement = document.createElement("canvas")
-
-    constructor(readonly painter: AtomPainter, readonly movableAtom: MovableAtom, readonly direction: Direction) {
-        this.canvas.width = TILE_SIZE
-        this.canvas.height = TILE_SIZE
-
-        const context = this.canvas.getContext("2d")
-        context.translate(TILE_SIZE * 0.5, TILE_SIZE * 0.5)
-        this.painter.paint(context, movableAtom.atom, Empty.Set, 0, 0, TILE_SIZE)
-    }
-
-    render(context: CanvasRenderingContext2D, point: Point): void {
-        context.save()
-        context.globalAlpha = 0.4
-        context.translate(point.x * TILE_SIZE, point.y * TILE_SIZE)
-        context.drawImage(this.canvas, 0, 0)
-        context.restore()
+    constructor(readonly atomSprite: AtomSprite, readonly direction: Direction) {
     }
 }
 
 class HistoryStep {
-    constructor(readonly movableAtom: MovableAtom,
+    constructor(readonly atomSprite: AtomSprite,
                 readonly fromX: number,
                 readonly fromY: number,
                 readonly toX: number,
@@ -76,30 +21,30 @@ class HistoryStep {
     }
 
     execute(): HistoryStep {
-        this.movableAtom.moveTo({x: this.toX, y: this.toY})
+        this.atomSprite.moveTo({x: this.toX, y: this.toY})
         return this
     }
 
     revert(): HistoryStep {
-        this.movableAtom.moveTo({x: this.fromX, y: this.fromY})
+        this.atomSprite.moveTo({x: this.fromX, y: this.fromY})
         return this
     }
 }
 
-export class ArenaCanvas {
-    private readonly canvas = document.createElement("canvas")
-    private readonly context = this.canvas.getContext("2d")
+class ArenaCanvas {
+    private readonly canvas: HTMLCanvasElement = document.querySelector("canvas#background-layer")
+    private readonly context: CanvasRenderingContext2D = this.canvas.getContext("2d")
 
     constructor(private readonly arenaPainter: ArenaPainter) {
+    }
+
+    get element(): HTMLElement {
+        return this.canvas
     }
 
     resizeTo(width: number, height: number) {
         this.canvas.width = width * devicePixelRatio
         this.canvas.height = height * devicePixelRatio
-    }
-
-    get element(): HTMLElement {
-        return this.canvas
     }
 
     paint(arena: Map2d): void {
@@ -110,34 +55,21 @@ export class ArenaCanvas {
     }
 }
 
-export class AtomsCanvas {
-    private readonly canvas = document.createElement("canvas")
-    private readonly context = this.canvas.getContext("2d")
-
-    constructor() {
+export class AtomsLayer {
+    constructor(private readonly element: HTMLElement) {
     }
 
-    resizeTo(width: number, height: number) {
-        this.canvas.width = width * devicePixelRatio
-        this.canvas.height = height * devicePixelRatio
+    addSprite(atomSprite: AtomSprite) {
+        this.element.appendChild(atomSprite.element())
     }
 
-    get element(): HTMLElement {
-        return this.canvas
+    removeAllSprites(): void {
+        while (this.element.lastChild !== null) {
+            this.element.lastChild.remove()
+        }
     }
 
-    clear(): void {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
-    }
-
-    paint(movableAtoms: MovableAtom[], renderer: ((context: CanvasRenderingContext2D, movableAtom: MovableAtom) => void)): void {
-        this.context.save()
-        this.context.scale(devicePixelRatio, devicePixelRatio)
-        movableAtoms.forEach(movableAtom => renderer(this.context, movableAtom))
-        this.context.restore()
-    }
-
-    showMovePreview(source: Point, target: Point) {
+    /*showMovePreview(source: Point, target: Point) {
         this.context.save()
         this.context.scale(devicePixelRatio, devicePixelRatio)
         this.context.strokeStyle = "rgba(255, 255, 255, 0.1)"
@@ -152,13 +84,13 @@ export class AtomsCanvas {
         this.context.lineTo((x1 + 0.5) * TILE_SIZE, (y1 + 0.5) * TILE_SIZE)
         this.context.stroke()
         this.context.restore()
-    }
+    }*/
 }
 
 export class GameContext implements ControlHost {
     private readonly arenaCanvas: ArenaCanvas = new ArenaCanvas(this.arenaPainter)
-    private readonly atomsCanvas: AtomsCanvas = new AtomsCanvas()
-    private readonly movableAtoms: MovableAtom[] = []
+    private readonly atomsLayer: AtomsLayer = new AtomsLayer(this.element.querySelector("div#atom-layer"))
+    private readonly atomSprites: AtomSprite[] = []
     private readonly history: HistoryStep[] = []
 
     private readonly labelLevelId: HTMLElement = document.getElementById("level-id")
@@ -176,8 +108,6 @@ export class GameContext implements ControlHost {
                 private readonly atomPainter: AtomPainter,
                 private readonly levels: Level[]) {
         this.initLevel(this.levels[this.levelPointer])
-        this.element.appendChild(this.arenaCanvas.element)
-        this.element.appendChild(this.atomsCanvas.element)
 
         document.getElementById("undo-button").addEventListener("click", () => this.undo())
         document.getElementById("redo-button").addEventListener("click", () => this.redo())
@@ -191,25 +121,24 @@ export class GameContext implements ControlHost {
         return this.element
     }
 
-    nearestMovableAtom(x: number, y: number): MovableAtom | null {
+    nearestAtomSprite(x: number, y: number): AtomSprite | null {
         let nearestDistance: number = Number.MAX_VALUE
-        let nearestMovableAtom: MovableAtom = null
-        this.movableAtoms.forEach((movableAtom: MovableAtom) => {
-            const dx = x - (movableAtom.x + 0.5) * TILE_SIZE
-            const dy = y - (movableAtom.y + 0.5) * TILE_SIZE
+        let nearestMovableAtom: AtomSprite = null
+        this.atomSprites.forEach((atomSprite: AtomSprite) => {
+            const dx = x - (atomSprite.x + 0.5) * TILE_SIZE
+            const dy = y - (atomSprite.y + 0.5) * TILE_SIZE
             const distance = Math.sqrt(dx * dx + dy * dy)
             if (distance > TILE_SIZE) return
             if (nearestDistance > distance) {
                 nearestDistance = distance
-                nearestMovableAtom = movableAtom
+                nearestMovableAtom = atomSprite
             }
         })
         return nearestMovableAtom
     }
 
-    showPreviewMove(movableAtom: MovableAtom, direction: Direction) {
-        this.movePreview = Options.valueOf(new MovePreview(this.atomPainter, movableAtom, direction))
-        this.renderStaticAtoms()
+    showPreviewMove(atomSprite: AtomSprite, direction: Direction) {
+        this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction))
     }
 
     async hidePreviewMove(commit: boolean) {
@@ -217,10 +146,8 @@ export class GameContext implements ControlHost {
             const preview = this.movePreview.get()
             this.movePreview = Options.None
             if (commit) {
-                console.log("start execution")
-                await this.executeMove(preview.movableAtom, preview.direction)
+                await this.executeMove(preview.atomSprite, preview.direction)
             }
-            this.renderStaticAtoms()
         }
     }
 
@@ -229,7 +156,6 @@ export class GameContext implements ControlHost {
             return
         }
         this.history[--this.historyPointer].revert()
-        this.renderStaticAtoms()
     }
 
     private redo(): boolean {
@@ -237,7 +163,6 @@ export class GameContext implements ControlHost {
             return
         }
         this.history[this.historyPointer++].execute()
-        this.renderStaticAtoms()
     }
 
     private reset(): void {
@@ -250,11 +175,11 @@ export class GameContext implements ControlHost {
         }
         this.level.ifPresent(async level => {
             for (const move of level.solution) {
-                const movableAtom: MovableAtom = this.movableAtoms.find(movableAtom => {
-                    return movableAtom.x === move.x && movableAtom.y === move.y
+                const atomSprite: AtomSprite = this.atomSprites.find(atomSprite => {
+                    return atomSprite.x === move.x && atomSprite.y === move.y
                 })
-                console.assert(movableAtom !== undefined)
-                await this.executeMove(movableAtom, move.direction)
+                console.assert(atomSprite !== undefined)
+                await this.executeMove(atomSprite, move.direction)
                 await Hold.forFrames(12)
             }
         })
@@ -262,15 +187,18 @@ export class GameContext implements ControlHost {
 
     private async showSolvedAnimation(): Promise<void> {
         this.soundManager.play(Sound.Complete)
-        await Hold.forFrames(120)
+        await Hold.forFrames(60)
 
-        this.movableAtoms.sort((a: MovableAtom, b: MovableAtom) => {
+        this.atomSprites.sort((a: AtomSprite, b: AtomSprite) => {
             if (a.y > b.y) return 1
             if (a.y < b.y) return -1
             return a.x - b.x
         })
 
-        console.log(this.movableAtoms.map(m => `${m.x}, ${m.y}`).join("\n")) // disassembly in this order
+        while (this.atomSprites.length > 0) {
+            this.soundManager.play(Sound.DisposeAtom)
+            await this.atomSprites.shift().dispose()
+        }
 
         const stopSound = this.soundManager.play(Sound.NextLevel)
         const boundingClientRect = this.element.getBoundingClientRect()
@@ -294,69 +222,26 @@ export class GameContext implements ControlHost {
         })
     }
 
-    private renderStaticAtoms(): void {
-        this.atomsCanvas.clear()
-        this.movePreview.ifPresent(preview => {
-            const movableAtom = preview.movableAtom
-            const position = movableAtom.predictMove(preview.direction)
-            this.atomsCanvas.showMovePreview(movableAtom, position)
-        })
-        this.atomsCanvas.paint(this.movableAtoms, (context, movableAtom) => {
-            this.atomPainter.paint(context, movableAtom.atom, this.getConnected(movableAtom),
-                (movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE, TILE_SIZE)
-        })
-    }
-
-    private async executeMove(movingAtom: MovableAtom, direction: Direction): Promise<void> {
-        const fromX = movingAtom.x
-        const fromY = movingAtom.y
-        const target = movingAtom.predictMove(direction)
+    private async executeMove(atomSprite: AtomSprite, direction: Direction): Promise<void> {
+        const fromX = atomSprite.x
+        const fromY = atomSprite.y
+        const target = atomSprite.predictMove(direction)
         const toX = target.x
         const toY = target.y
-        if (toX === fromX && toY === fromY) return
+        if (toX === fromX && toY === fromY) return Promise.resolve()
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
-        this.history.push(new HistoryStep(movingAtom, fromX, fromY, toX, toY).execute())
+        this.history.push(new HistoryStep(atomSprite, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
         const stopMoveSound = this.soundManager.play(Sound.Move)
-        await Hold.forAnimation(phase => {
-            phase = Easing.easeInOutQuad(phase)
-            this.atomsCanvas.clear()
-            this.atomsCanvas.paint(this.movableAtoms, (context, movableAtom) => {
-                if (movableAtom === movingAtom) {
-                    const target = {
-                        x: fromX + phase * (toX - fromX),
-                        y: fromY + phase * (toY - fromY)
-                    }
-                    this.atomPainter.paint(context, movableAtom.atom, Empty.Set,
-                        (target.x + 0.5) * TILE_SIZE, (target.y + 0.5) * TILE_SIZE, TILE_SIZE)
-                } else {
-                    this.atomPainter.paint(context, movableAtom.atom, this.getConnected(movableAtom),
-                        (movableAtom.x + 0.5) * TILE_SIZE, (movableAtom.y + 0.5) * TILE_SIZE, TILE_SIZE)
-                }
-            })
-        }, 16)
+        await Hold.forTransitionComplete(atomSprite.element())
         stopMoveSound()
         this.soundManager.play(Sound.Dock)
+        this.atomSprites.forEach(atomSprite => atomSprite.updatePaint())
         if (this.level.get().isSolved()) {
             await Hold.forFrames(12)
             await this.showSolvedAnimation()
         }
         return Promise.resolve()
-    }
-
-    private getConnected(movableAtom: MovableAtom): Set<Connector> {
-        console.assert(this.level.nonEmpty())
-        console.assert(movableAtom !== undefined)
-        const set = new Set<Connector>()
-        movableAtom.atom.connectors.forEach(connector => {
-            const maybeAtom = this.level.get().arena.getField(movableAtom.x + connector.bond.xAxis, movableAtom.y + connector.bond.yAxis)
-            if (maybeAtom instanceof Atom) {
-                if (maybeAtom.connectors.some(other => other.matches(connector))) {
-                    set.add(connector)
-                }
-            }
-        })
-        return set
     }
 
     private initLevel(level: Level): void {
@@ -370,31 +255,32 @@ export class GameContext implements ControlHost {
         this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
         this.labelLevelName.textContent = level.name
 
+        this.atomsLayer.removeAllSprites()
         const arena: Map2d = level.arena
-        ArrayUtils.replace(this.movableAtoms, this.initMovableAtoms(arena))
+        ArrayUtils.replace(this.atomSprites, this.initAtomSprites(arena))
         this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
         this.arenaCanvas.paint(arena)
         this.renderMoleculePreview(level.molecule)
-        this.renderStaticAtoms()
     }
 
     private resizeTo(width: number, height: number) {
         this.arenaCanvas.resizeTo(width, height)
-        this.atomsCanvas.resizeTo(width, height)
         this.element.style.width = `${width}px`
         this.element.style.height = `${height}px`
     }
 
-    private initMovableAtoms(arena: Map2d): MovableAtom[] {
-        const atoms: MovableAtom[] = []
+    private initAtomSprites(arena: Map2d): AtomSprite[] {
+        const atomSprites: AtomSprite[] = []
         let count = 0
         arena.iterateFields((maybeAtom, x, y) => {
             if (maybeAtom instanceof Atom) {
-                atoms.push(new MovableAtom(arena, maybeAtom, x, y))
+                const atomSprite = new AtomSprite(this.atomPainter, arena, maybeAtom, x, y)
+                this.atomsLayer.addSprite(atomSprite)
+                atomSprites.push(atomSprite)
                 count++
             }
         })
-        return atoms
+        return atomSprites
     }
 
     private renderMoleculePreview(molecule: Map2d) {

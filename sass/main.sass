@@ -1,4 +1,5 @@
 @import common
+@import animations
 
 $panel-color: #1C1C1C
 $gap: 0.25vw
@@ -69,12 +70,12 @@ main
     background-color: $panel-color
     height: 100%
 
-    div.canvas
+    div.layers
       position: relative
       pointer-events: all
       box-shadow: 0 1vmin 2vmin 0 rgba(0, 0, 0, 0.8)
 
-      canvas
+      > canvas#background-layer, > div#atom-layer
         top: 0
         left: 0
         right: 0
@@ -84,6 +85,14 @@ main
         position: absolute
         pointer-events: none
 
+      > div#atom-layer > canvas.atom-sprite
+        top: 0
+        left: 0
+        position: absolute
+        transition: transform 200ms ease-in-out
+
+        &.dispose
+          animation: atom-dispose 333ms ease-out forwards
 
   div.preview
     grid-area: 2 / 1

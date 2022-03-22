@@ -1,12 +1,12 @@
-import {MovableAtom} from "../game.js"
 import {Direction} from "../../lib/common.js"
+import {AtomSprite} from "../display/sprites.js"
 
 export interface ControlHost {
     getTargetElement(): HTMLElement
 
-    nearestMovableAtom(x: number, y: number): MovableAtom | null
+    nearestAtomSprite(x: number, y: number): AtomSprite | null
 
-    showPreviewMove(movableAtom: MovableAtom, direction: Direction)
+    showPreviewMove(movableAtom: AtomSprite, direction: Direction)
 
     hidePreviewMove(commit: boolean)
 }
