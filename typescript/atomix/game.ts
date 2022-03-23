@@ -1,5 +1,5 @@
 import {Atom, Connector, Level, Map2d} from "./model/model.js"
-import {ControlHost, HistoryStep} from "./controls/controls.js"
+import {ControlHost, MoveOperation} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
 import {ArrayUtils, Direction, Hold, Option, Options, Point} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./display/painter.js"
@@ -112,7 +112,7 @@ export class GameContext implements ControlHost {
     private readonly arenaCanvas: ArenaCanvas = new ArenaCanvas(this.arenaPainter)
     private readonly atomsLayer: AtomsLayer = new AtomsLayer(this.element.querySelector("div#atom-layer"))
     private readonly atomSprites: AtomSprite[] = []
-    private readonly history: HistoryStep[] = []
+    private readonly history: MoveOperation[] = []
 
     private readonly labelTitle: HTMLElement = document.getElementById("title")
     private readonly labelScore: HTMLElement = document.getElementById("score")
@@ -205,16 +205,20 @@ export class GameContext implements ControlHost {
         }
     }
 
-    private undo(): boolean {
+    private async undo(): Promise<void> {
         if (!this.acceptUserInput) return
         if (this.historyPointer === 0) return
-        this.history[--this.historyPointer].revert()
+        this.acceptUserInput = false
+        await this.history[--this.historyPointer].revert()
+        this.acceptUserInput = true
     }
 
-    private redo(): boolean {
+    private async redo(): Promise<void> {
         if (!this.acceptUserInput) return
         if (this.historyPointer === this.history.length) return
-        this.history[this.historyPointer++].execute()
+        this.acceptUserInput = false
+        await this.history[this.historyPointer++].execute()
+        this.acceptUserInput = true
     }
 
     private async reset(): Promise<void> {
@@ -265,7 +269,6 @@ export class GameContext implements ControlHost {
             fadeOutSeconds: 1.0,
             volume: -9.0
         }))
-
         ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
     }
 
@@ -276,15 +279,11 @@ export class GameContext implements ControlHost {
         const toX = target.x
         const toY = target.y
         if (toX === fromX && toY === fromY) return Promise.resolve()
-        const distance = Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY)) // simplified for 2 axis
-        atomSprite.mapMoveDuration(distance)
-        const stopMoveSound = this.soundManager.play(Sound.Move)
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
-        this.history.push(new HistoryStep(atomSprite, fromX, fromY, toX, toY).execute())
+        const moveOperation = new MoveOperation(this.soundManager, atomSprite, fromX, fromY, toX, toY)
+        await moveOperation.execute()
+        this.history.push(moveOperation)
         this.historyPointer = this.history.length
-        await Hold.forTransitionComplete(atomSprite.element())
-        stopMoveSound()
-        this.soundManager.play(Sound.Dock)
         this.atomSprites.forEach(atomSprite => atomSprite.updatePaint())
         if (this.level.get().isSolved()) {
             this.clock.stop()

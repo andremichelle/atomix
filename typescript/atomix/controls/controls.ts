@@ -1,5 +1,6 @@
-import {Direction} from "../../lib/common.js"
+import {Direction, Hold} from "../../lib/common.js"
 import {AtomSprite} from "../display/sprites.js"
+import {Sound, SoundManager} from "../sounds.js"
 
 export interface ControlHost {
     getTargetElement(): HTMLElement
@@ -11,21 +12,31 @@ export interface ControlHost {
     hidePreviewMove(commit: boolean)
 }
 
-export class HistoryStep {
-    constructor(readonly atomSprite: AtomSprite,
+export class MoveOperation {
+    private readonly distance = Math.max(Math.abs(this.toX - this.fromX), Math.abs(this.toY - this.fromY)) // simplified for 2 axis
+
+    constructor(readonly soundManager: SoundManager,
+                readonly atomSprite: AtomSprite,
                 readonly fromX: number,
                 readonly fromY: number,
                 readonly toX: number,
                 readonly toY: number) {
     }
 
-    execute(): HistoryStep {
+    async execute(): Promise<void> {
+        this.atomSprite.mapMoveDuration(this.distance)
         this.atomSprite.moveTo({x: this.toX, y: this.toY})
-        return this
+        const stopSound = this.soundManager.play(Sound.Move)
+        await Hold.forTransitionComplete(this.atomSprite.element())
+        stopSound()
+        this.soundManager.play(Sound.Dock)
     }
 
-    revert(): HistoryStep {
+    async revert(): Promise<void> {
         this.atomSprite.moveTo({x: this.fromX, y: this.fromY})
-        return this
+        const stopSound = this.soundManager.play(Sound.Move)
+        await Hold.forTransitionComplete(this.atomSprite.element())
+        stopSound()
+        this.soundManager.play(Sound.Dock)
     }
 }

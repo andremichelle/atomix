@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Atom } from "./model/model.js";
-import { HistoryStep } from "./controls/controls.js";
+import { MoveOperation } from "./controls/controls.js";
 import { TouchControl } from "./controls/touch.js";
 import { ArrayUtils, Hold, Options } from "../lib/common.js";
 import { TILE_SIZE } from "./display/painter.js";
@@ -143,7 +143,7 @@ export class GameContext {
         this.labelTitle.addEventListener("touchstart", (event) => __awaiter(this, void 0, void 0, function* () {
             if (!this.acceptUserInput)
                 return;
-            if (event.targetTouches.length > 2) {
+            if (event.targetTouches.length > 1) {
                 yield this.solve();
             }
         }));
@@ -198,18 +198,26 @@ export class GameContext {
         });
     }
     undo() {
-        if (!this.acceptUserInput)
-            return;
-        if (this.historyPointer === 0)
-            return;
-        this.history[--this.historyPointer].revert();
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.acceptUserInput)
+                return;
+            if (this.historyPointer === 0)
+                return;
+            this.acceptUserInput = false;
+            yield this.history[--this.historyPointer].revert();
+            this.acceptUserInput = true;
+        });
     }
     redo() {
-        if (!this.acceptUserInput)
-            return;
-        if (this.historyPointer === this.history.length)
-            return;
-        this.history[this.historyPointer++].execute();
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.acceptUserInput)
+                return;
+            if (this.historyPointer === this.history.length)
+                return;
+            this.acceptUserInput = false;
+            yield this.history[this.historyPointer++].execute();
+            this.acceptUserInput = true;
+        });
     }
     reset() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -263,7 +271,7 @@ export class GameContext {
                 loop: true,
                 fadeInSeconds: 1.0,
                 fadeOutSeconds: 1.0,
-                volume: -6.0
+                volume: -9.0
             }));
             ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
         });
@@ -277,15 +285,11 @@ export class GameContext {
             const toY = target.y;
             if (toX === fromX && toY === fromY)
                 return Promise.resolve();
-            const distance = Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY));
-            atomSprite.mapMoveDuration(distance);
-            const stopMoveSound = this.soundManager.play(Sound.Move);
             this.history.splice(this.historyPointer, this.history.length - this.historyPointer);
-            this.history.push(new HistoryStep(atomSprite, fromX, fromY, toX, toY).execute());
+            const moveOperation = new MoveOperation(this.soundManager, atomSprite, fromX, fromY, toX, toY);
+            yield moveOperation.execute();
+            this.history.push(moveOperation);
             this.historyPointer = this.history.length;
-            yield Hold.forTransitionComplete(atomSprite.element());
-            stopMoveSound();
-            this.soundManager.play(Sound.Dock);
             this.atomSprites.forEach(atomSprite => atomSprite.updatePaint());
             if (this.level.get().isSolved()) {
                 this.clock.stop();
