@@ -91,6 +91,7 @@ main
       font-family: "PressStart2P", sans-serif
       pointer-events: all
       cursor: pointer
+      animation: wobbling 0.3s infinite alternate ease-in-out
 
       &.disappear
         animation: play-button-disappear 500ms ease forwards
@@ -146,7 +147,7 @@ main
     height: 100%
     border-radius: 0 $gap 0 0
 
-  div.history
+  div.action-buttons
     top: 2vmin
     right: 2vmin
     position: absolute
@@ -157,7 +158,8 @@ main
       appearance: none
       outline: none
       border: none
-      font-family: "Inter", sans-serif
+      background: none
+      font-family: "PressStart2P", sans-serif
       font-size: 1vw
       line-height: 1em
       margin: 0
@@ -165,8 +167,6 @@ main
       border-radius: 1vw
       text-transform: uppercase
       color: rgba(white, 0.6)
-      background-color: $panel-color
-      box-shadow: 0 0 3vw 0 rgba(white, 0.2) inset
 
       &:active
         background-color: lighten($panel-color, 20)

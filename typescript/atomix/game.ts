@@ -128,7 +128,7 @@ export class GameContext implements ControlHost {
             this.labelLevelTime.textContent = `${mm}:${ss}`
         }, () => this.soundManager.play(Sound.ClockElapsed))
 
-    private backgroundLoopStop: Option<() => void> = Options.None
+    private backgroundAudioStop: Option<() => void> = Options.None
     private transitionSoundStop: Option<() => void> = Options.None
 
     private movePreview: Option<MovePreview> = Options.None
@@ -149,7 +149,12 @@ export class GameContext implements ControlHost {
         document.getElementById("undo-button").addEventListener("click", () => this.undo())
         document.getElementById("redo-button").addEventListener("click", () => this.redo())
         document.getElementById("reset-button").addEventListener("click", () => this.reset())
-        document.getElementById("solve-button").addEventListener("click", () => this.solve())
+        this.labelTitle.addEventListener("touchstart", async (event: TouchEvent) => {
+            if (!this.acceptUserInput) return
+            if (event.targetTouches.length > 2) {
+                await this.solve()
+            }
+        })
         new TouchControl(this)
     }
 
@@ -215,6 +220,8 @@ export class GameContext implements ControlHost {
     private async reset(): Promise<void> {
         if (!this.acceptUserInput) return
         this.acceptUserInput = false
+        this.backgroundAudioStop.ifPresent(stop => stop())
+        this.backgroundAudioStop = Options.None
         await this.startLevel(this.levels[this.levelPointer])
     }
 
@@ -252,12 +259,13 @@ export class GameContext implements ControlHost {
         this.soundManager.play(Sound.LevelDocked)
         this.element.classList.remove("appear")
         await Hold.forFrames(40)
-        this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
+        this.backgroundAudioStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
             loop: true,
-            fadeInSeconds: 0.0,
-            fadeOutSeconds: 5.0,
+            fadeInSeconds: 1.0,
+            fadeOutSeconds: 1.0,
             volume: -6.0
         }))
+
         ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
     }
 
@@ -287,8 +295,8 @@ export class GameContext implements ControlHost {
     }
 
     private async showSolvedAnimation(): Promise<void> {
-        this.backgroundLoopStop.ifPresent(stop => stop())
-        this.backgroundLoopStop = Options.None
+        this.backgroundAudioStop.ifPresent(stop => stop())
+        this.backgroundAudioStop = Options.None
         this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"))
         this.soundManager.play(Sound.Complete)
         this.labelTitle.classList.add("animate")
@@ -317,7 +325,7 @@ export class GameContext implements ControlHost {
             this.clock.restart()
             this.acceptUserInput = true
         }
-        await this.solve()
+        // await this.solve()
     }
 
     private resizeTo(width: number, height: number) {

@@ -27,7 +27,7 @@ export declare class GameContext implements ControlHost {
     private readonly labelLevelName;
     private readonly labelLevelTime;
     private readonly clock;
-    private backgroundLoopStop;
+    private backgroundAudioStop;
     private transitionSoundStop;
     private movePreview;
     private historyPointer;

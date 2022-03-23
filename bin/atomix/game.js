@@ -129,7 +129,7 @@ export class GameContext {
             const ss = (seconds % 60).toString().padStart(2, "0");
             this.labelLevelTime.textContent = `${mm}:${ss}`;
         }, () => this.soundManager.play(Sound.ClockElapsed));
-        this.backgroundLoopStop = Options.None;
+        this.backgroundAudioStop = Options.None;
         this.transitionSoundStop = Options.None;
         this.movePreview = Options.None;
         this.historyPointer = 0;
@@ -140,7 +140,13 @@ export class GameContext {
         document.getElementById("undo-button").addEventListener("click", () => this.undo());
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
         document.getElementById("reset-button").addEventListener("click", () => this.reset());
-        document.getElementById("solve-button").addEventListener("click", () => this.solve());
+        this.labelTitle.addEventListener("touchstart", (event) => __awaiter(this, void 0, void 0, function* () {
+            if (!this.acceptUserInput)
+                return;
+            if (event.targetTouches.length > 2) {
+                yield this.solve();
+            }
+        }));
         new TouchControl(this);
     }
     start() {
@@ -210,6 +216,8 @@ export class GameContext {
             if (!this.acceptUserInput)
                 return;
             this.acceptUserInput = false;
+            this.backgroundAudioStop.ifPresent(stop => stop());
+            this.backgroundAudioStop = Options.None;
             yield this.startLevel(this.levels[this.levelPointer]);
         });
     }
@@ -251,10 +259,10 @@ export class GameContext {
             this.soundManager.play(Sound.LevelDocked);
             this.element.classList.remove("appear");
             yield Hold.forFrames(40);
-            this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
+            this.backgroundAudioStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
                 loop: true,
-                fadeInSeconds: 0.0,
-                fadeOutSeconds: 5.0,
+                fadeInSeconds: 1.0,
+                fadeOutSeconds: 1.0,
                 volume: -6.0
             }));
             ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
@@ -289,8 +297,8 @@ export class GameContext {
     }
     showSolvedAnimation() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.backgroundLoopStop.ifPresent(stop => stop());
-            this.backgroundLoopStop = Options.None;
+            this.backgroundAudioStop.ifPresent(stop => stop());
+            this.backgroundAudioStop = Options.None;
             this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"));
             this.soundManager.play(Sound.Complete);
             this.labelTitle.classList.add("animate");
@@ -311,15 +319,15 @@ export class GameContext {
             this.element.classList.remove("disappear");
             if (++this.levelPointer === this.levels.length) {
                 console.log("ALL DONE");
+                return;
             }
             else {
-                yield this.startLevel(this.levels[++this.levelPointer]);
+                yield this.startLevel(this.levels[this.levelPointer]);
                 yield Hold.forEvent(this.labelTitle, "animationiteration");
                 this.labelTitle.classList.remove("animate");
                 this.clock.restart();
                 this.acceptUserInput = true;
             }
-            yield this.solve();
         });
     }
     resizeTo(width, height) {

@@ -61,6 +61,17 @@ svg.preloader > circle.progress {
   stroke-dashoffset: calc(var(--radius) * 6.2831853 * (1 - var(--percentage)));
 }
 
+@keyframes wobbling {
+  0% {
+    transform: translate(-50%, -50%) rotate(-2deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(2deg);
+  }
+}
 @keyframes level-appear {
   0% {
     top: -100%;
@@ -209,6 +220,7 @@ main div.play-field button.play-button {
   font-family: "PressStart2P", sans-serif;
   pointer-events: all;
   cursor: pointer;
+  animation: wobbling 0.3s infinite alternate ease-in-out;
 }
 main div.play-field button.play-button.disappear {
   animation: play-button-disappear 500ms ease forwards;
@@ -263,18 +275,19 @@ main div.preview {
   height: 100%;
   border-radius: 0 0.25vw 0 0;
 }
-main div.history {
+main div.action-buttons {
   top: 2vmin;
   right: 2vmin;
   position: absolute;
   display: flex;
   column-gap: 0.25vw;
 }
-main div.history button {
+main div.action-buttons button {
   appearance: none;
   outline: none;
   border: none;
-  font-family: "Inter", sans-serif;
+  background: none;
+  font-family: "PressStart2P", sans-serif;
   font-size: 1vw;
   line-height: 1em;
   margin: 0;
@@ -282,10 +295,8 @@ main div.history button {
   border-radius: 1vw;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.6);
-  background-color: #1C1C1C;
-  box-shadow: 0 0 3vw 0 rgba(255, 255, 255, 0.2) inset;
 }
-main div.history button:active {
+main div.action-buttons button:active {
   background-color: #4f4f4f;
 }
 
