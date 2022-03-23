@@ -10,3 +10,22 @@ export interface ControlHost {
 
     hidePreviewMove(commit: boolean)
 }
+
+export class HistoryStep {
+    constructor(readonly atomSprite: AtomSprite,
+                readonly fromX: number,
+                readonly fromY: number,
+                readonly toX: number,
+                readonly toY: number) {
+    }
+
+    execute(): HistoryStep {
+        this.atomSprite.moveTo({x: this.toX, y: this.toY})
+        return this
+    }
+
+    revert(): HistoryStep {
+        this.atomSprite.moveTo({x: this.fromX, y: this.fromY})
+        return this
+    }
+}

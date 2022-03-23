@@ -20,11 +20,16 @@ main
     padding: 0
 
   h1
-    background: linear-gradient(orange, yellow, green, cyan, blue, violet)
+    background-image: linear-gradient(to bottom, orange, yellow, green, cyan, blue, violet)
+    background-repeat: repeat-y
+    background-size: 100% 99%
     -webkit-background-clip: text
     -webkit-text-fill-color: transparent
     text-transform: uppercase
     font-size: 3.5vw
+
+    &.animate
+      animation: title-gradient infinite 1s linear
 
   h2
     background: linear-gradient(white, #AAA)
@@ -51,6 +56,7 @@ main
       display: flex
       flex-direction: column
       row-gap: 2vw
+      position: relative
 
       .status
         display: grid

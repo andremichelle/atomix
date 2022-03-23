@@ -8,7 +8,7 @@ import {SoundManager} from "./atomix/sounds.js"
 /**
  * TODO
  * Prevent new inputs while running animations
- * Nice reflection animation when puzzle is solved and maybe a animation on the rainbow game title?
+ * Nice reflection animation when puzzle is solved
  * Moving duration in respect to distance?
  * Bonus level graphics
  * Proper layout and scaling for different media sizes

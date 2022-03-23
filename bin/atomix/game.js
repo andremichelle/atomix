@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Atom } from "./model/model.js";
+import { HistoryStep } from "./controls/controls.js";
 import { TouchControl } from "./controls/touch.js";
 import { ArrayUtils, Hold, Options } from "../lib/common.js";
 import { TILE_SIZE } from "./display/painter.js";
@@ -18,23 +19,6 @@ class MovePreview {
     constructor(atomSprite, direction) {
         this.atomSprite = atomSprite;
         this.direction = direction;
-    }
-}
-class HistoryStep {
-    constructor(atomSprite, fromX, fromY, toX, toY) {
-        this.atomSprite = atomSprite;
-        this.fromX = fromX;
-        this.fromY = fromY;
-        this.toX = toX;
-        this.toY = toY;
-    }
-    execute() {
-        this.atomSprite.moveTo({ x: this.toX, y: this.toY });
-        return this;
-    }
-    revert() {
-        this.atomSprite.moveTo({ x: this.fromX, y: this.fromY });
-        return this;
     }
 }
 class ArenaCanvas {
@@ -81,6 +65,7 @@ export class GameContext {
         this.atomsLayer = new AtomsLayer(this.element.querySelector("div#atom-layer"));
         this.atomSprites = [];
         this.history = [];
+        this.labelTitle = document.getElementById("title");
         this.labelLevelId = document.getElementById("level-id");
         this.labelLevelName = document.getElementById("level-name");
         this.movePreview = Options.None;
@@ -92,6 +77,7 @@ export class GameContext {
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
         document.getElementById("reset-button").addEventListener("click", () => this.reset());
         document.getElementById("solve-button").addEventListener("click", () => this.solve());
+        this.soundManager.play(Sound.StartLevel);
         new TouchControl(this);
     }
     getTargetElement() {
@@ -162,6 +148,7 @@ export class GameContext {
     showSolvedAnimation() {
         return __awaiter(this, void 0, void 0, function* () {
             this.soundManager.play(Sound.Complete);
+            this.labelTitle.classList.add("animate");
             yield Hold.forFrames(60);
             this.atomSprites.sort((a, b) => {
                 if (a.y > b.y)
@@ -186,6 +173,8 @@ export class GameContext {
                 this.element.style.top = `${(1.0 - phase) * boundingClientRect.bottom}px`;
             }, 20);
             stopSound();
+            yield Hold.forEvent(this.labelTitle, "animationiteration");
+            this.labelTitle.classList.remove("animate");
             this.soundManager.play(Sound.StartLevel);
             return new Promise(resolve => {
                 resolve();

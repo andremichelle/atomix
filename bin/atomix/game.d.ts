@@ -20,6 +20,7 @@ export declare class GameContext implements ControlHost {
     private readonly atomsLayer;
     private readonly atomSprites;
     private readonly history;
+    private readonly labelTitle;
     private readonly labelLevelId;
     private readonly labelLevelName;
     private movePreview;

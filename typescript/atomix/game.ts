@@ -1,5 +1,5 @@
 import {Atom, Connector, Level, Map2d} from "./model/model.js"
-import {ControlHost} from "./controls/controls.js"
+import {ControlHost, HistoryStep} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
 import {ArrayUtils, Direction, Hold, Option, Options} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./display/painter.js"
@@ -9,25 +9,6 @@ import {AtomSprite} from "./display/sprites.js"
 
 class MovePreview {
     constructor(readonly atomSprite: AtomSprite, readonly direction: Direction) {
-    }
-}
-
-class HistoryStep {
-    constructor(readonly atomSprite: AtomSprite,
-                readonly fromX: number,
-                readonly fromY: number,
-                readonly toX: number,
-                readonly toY: number) {
-    }
-
-    execute(): HistoryStep {
-        this.atomSprite.moveTo({x: this.toX, y: this.toY})
-        return this
-    }
-
-    revert(): HistoryStep {
-        this.atomSprite.moveTo({x: this.fromX, y: this.fromY})
-        return this
     }
 }
 
@@ -93,6 +74,7 @@ export class GameContext implements ControlHost {
     private readonly atomSprites: AtomSprite[] = []
     private readonly history: HistoryStep[] = []
 
+    private readonly labelTitle: HTMLElement = document.getElementById("title")
     private readonly labelLevelId: HTMLElement = document.getElementById("level-id")
     private readonly labelLevelName: HTMLElement = document.getElementById("level-name")
 
@@ -114,6 +96,7 @@ export class GameContext implements ControlHost {
         document.getElementById("reset-button").addEventListener("click", () => this.reset())
         document.getElementById("solve-button").addEventListener("click", () => this.solve())
 
+        this.soundManager.play(Sound.StartLevel)
         new TouchControl(this)
     }
 
@@ -187,6 +170,7 @@ export class GameContext implements ControlHost {
 
     private async showSolvedAnimation(): Promise<void> {
         this.soundManager.play(Sound.Complete)
+        this.labelTitle.classList.add("animate")
         await Hold.forFrames(60)
 
         this.atomSprites.sort((a: AtomSprite, b: AtomSprite) => {
@@ -215,6 +199,8 @@ export class GameContext implements ControlHost {
         }, 20)
 
         stopSound()
+        await Hold.forEvent(this.labelTitle, "animationiteration")
+        this.labelTitle.classList.remove("animate")
         this.soundManager.play(Sound.StartLevel)
 
         return new Promise<void>(resolve => {
