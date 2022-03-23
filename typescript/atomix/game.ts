@@ -32,7 +32,7 @@ class ArenaCanvas {
     paint(arena: Map2d): void {
         this.context.save()
         this.context.scale(devicePixelRatio, devicePixelRatio)
-        this.arenaPainter.paint(this.context, arena)
+        this.arenaPainter.paint(this.context, arena, TILE_SIZE)
         this.context.restore()
     }
 }
@@ -203,6 +203,10 @@ export class GameContext implements ControlHost {
                 await this.executeMove(preview.atomSprite, preview.direction)
             }
         }
+    }
+
+    tileSize(): number {
+        return TILE_SIZE
     }
 
     private async undo(): Promise<void> {

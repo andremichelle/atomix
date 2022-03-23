@@ -8,7 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Direction, Events, Terminator } from "../../lib/common.js";
-import { TILE_SIZE } from "../display/painter.js";
 export class TouchControl {
     constructor(host) {
         this.host = host;
@@ -37,8 +36,8 @@ export class TouchControl {
             const target = startEvent.target;
             const startTouch = startEvent.targetTouches[0];
             const startIdentifier = startTouch.identifier;
-            const startX = (movableAtom.x + 0.5) * TILE_SIZE;
-            const startY = (movableAtom.y + 0.5) * TILE_SIZE;
+            const startX = (movableAtom.x + 0.5) * this.host.tileSize();
+            const startY = (movableAtom.y + 0.5) * this.host.tileSize();
             let lastDirection = -1;
             const move = (event) => {
                 const moveTouch = Array.from(event.targetTouches).find(touch => touch.identifier === startIdentifier);

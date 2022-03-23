@@ -37,7 +37,7 @@ class ArenaCanvas {
     paint(arena) {
         this.context.save();
         this.context.scale(devicePixelRatio, devicePixelRatio);
-        this.arenaPainter.paint(this.context, arena);
+        this.arenaPainter.paint(this.context, arena, TILE_SIZE);
         this.context.restore();
     }
 }
@@ -196,6 +196,9 @@ export class GameContext {
                 }
             }
         });
+    }
+    tileSize() {
+        return TILE_SIZE;
     }
     undo() {
         return __awaiter(this, void 0, void 0, function* () {

@@ -6,6 +6,7 @@ export interface ControlHost {
     nearestAtomSprite(x: number, y: number): AtomSprite | null;
     showPreviewMove(movableAtom: AtomSprite, direction: Direction): any;
     hidePreviewMove(commit: boolean): any;
+    tileSize(): number;
 }
 export declare class MoveOperation {
     readonly soundManager: SoundManager;

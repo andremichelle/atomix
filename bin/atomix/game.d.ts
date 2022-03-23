@@ -41,6 +41,7 @@ export declare class GameContext implements ControlHost {
     nearestAtomSprite(x: number, y: number): AtomSprite | null;
     showPreviewMove(atomSprite: AtomSprite, direction: Direction): void;
     hidePreviewMove(commit: boolean): Promise<void>;
+    tileSize(): number;
     private undo;
     private redo;
     private reset;

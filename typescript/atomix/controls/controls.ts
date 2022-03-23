@@ -10,6 +10,8 @@ export interface ControlHost {
     showPreviewMove(movableAtom: AtomSprite, direction: Direction)
 
     hidePreviewMove(commit: boolean)
+
+    tileSize(): number
 }
 
 export class MoveOperation {

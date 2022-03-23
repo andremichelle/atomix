@@ -23,22 +23,22 @@ export class ArenaPainter {
             return new ArenaPainter(floors, walls);
         });
     }
-    paint(context, arena) {
+    paint(context, arena, tileSize) {
         const random = new Mulberry32();
         arena.iterateFields((entry, x, y) => {
             if (entry !== Tile.Wall) {
-                context.drawImage(random.nextDouble(0.0, 1.0) < 0.05 ? this.floors[1] : this.floors[0], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                context.drawImage(random.nextDouble(0.0, 1.0) < 0.05 ? this.floors[1] : this.floors[0], x * tileSize, y * tileSize, tileSize, tileSize);
             }
         });
         arena.iterateFields((entry, x, y) => {
             if (entry === Tile.Wall) {
                 context.fillStyle = "rgba(0, 0, 0, 0.5)";
-                context.fillRect(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE / 8, TILE_SIZE, TILE_SIZE);
+                context.fillRect(x * tileSize, y * tileSize + tileSize / 8, tileSize, tileSize);
             }
         });
         arena.iterateFields((entry, x, y) => {
             if (entry === Tile.Wall) {
-                context.drawImage(random.nextDouble(0.0, 1.0) < 0.1 ? random.nextElement(this.walls) : this.walls[0], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                context.drawImage(random.nextDouble(0.0, 1.0) < 0.1 ? random.nextElement(this.walls) : this.walls[0], x * tileSize, y * tileSize, tileSize, tileSize);
             }
         });
     }
@@ -52,11 +52,11 @@ export class AtomPainter {
             return new AtomPainter(yield loadImageBitmaps(index => `./assets/atom${index}.png`, 18));
         });
     }
-    paint(context, atom, connected, x, y, size) {
+    paint(context, atom, connected, x, y, tileSize) {
         context.save();
         context.translate(x, y);
-        const radius = size * 0.33;
-        const shadowY = size / 6;
+        const radius = tileSize * 0.33;
+        const shadowY = tileSize / 6;
         const gradient = context.createRadialGradient(0.0, shadowY, 0.0, 0.0, shadowY, radius);
         gradient.addColorStop(0.6, "rgba(0, 0, 0, 0.8)");
         gradient.addColorStop(1.0, "rgba(0, 0, 0, 0.0)");
@@ -65,13 +65,13 @@ export class AtomPainter {
         context.arc(0.0, shadowY, radius, 0.0, Math.PI * 2.0);
         context.fill();
         atom.connectors.forEach(connector => AtomPainter
-            .paintConnectors(context, connector, connected.has(connector), size));
+            .paintConnectors(context, connector, connected.has(connector), tileSize));
         context.drawImage(this.images[atom.kind], -radius, -radius, radius * 2, radius * 2);
         resolveAtomName(atom.kind).ifPresent(name => {
             context.fillStyle = "rgba(255, 255, 255, 0.6)";
             context.textAlign = "center";
             context.textBaseline = "middle";
-            context.font = `normal ${size * 0.25}px "Inter"`;
+            context.font = `normal ${tileSize * 0.25}px "Inter"`;
             context.fillText(name, 0, 0);
         });
         context.restore();

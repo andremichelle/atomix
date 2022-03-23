@@ -1,7 +1,6 @@
 import {Direction, Events, Terminable, Terminator} from "../../lib/common.js"
 import {ControlHost} from "./controls.js"
 import {AtomSprite} from "../display/sprites.js"
-import {TILE_SIZE} from "../display/painter.js"
 
 export class TouchControl implements Terminable {
     private readonly terminator: Terminator = new Terminator()
@@ -34,8 +33,8 @@ export class TouchControl implements Terminable {
             const target = startEvent.target
             const startTouch = startEvent.targetTouches[0]
             const startIdentifier = startTouch.identifier
-            const startX = (movableAtom.x + 0.5) * TILE_SIZE
-            const startY = (movableAtom.y + 0.5) * TILE_SIZE
+            const startX = (movableAtom.x + 0.5) * this.host.tileSize()
+            const startY = (movableAtom.y + 0.5) * this.host.tileSize()
             let lastDirection = -1
             const move = (event: TouchEvent) => {
                 const moveTouch: Touch = Array.from(event.targetTouches).find(touch => touch.identifier === startIdentifier)
