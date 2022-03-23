@@ -7,6 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { ObservableValueImpl } from "../lib/common.js";
 export var Sound;
 (function (Sound) {
     Sound[Sound["BackgroundLoop"] = 0] = "BackgroundLoop";
@@ -22,6 +23,10 @@ export class SoundManager {
     constructor(context) {
         this.context = context;
         this.map = new Map();
+        this.masterGain = this.context.createGain();
+        this.enabled = new ObservableValueImpl(false);
+        this.enabled.addObserver(enabled => this.masterGain.gain.value = enabled ? 1.0 : 0.0, true);
+        this.masterGain.connect(this.context.destination);
     }
     load() {
         return [
@@ -46,7 +51,7 @@ export class SoundManager {
         bufferSource.buffer = this.map.get(sound);
         bufferSource.loop = loop;
         bufferSource.onended = () => bufferSource.disconnect();
-        bufferSource.connect(gainNode).connect(this.context.destination);
+        bufferSource.connect(gainNode).connect(this.masterGain);
         bufferSource.start();
         return () => {
             const endTime = this.context.currentTime + fadeOutSeconds;

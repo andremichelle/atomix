@@ -116,17 +116,23 @@ main
         position: absolute
         pointer-events: none
 
-      > div#atom-layer > canvas.atom-sprite
-        --duration: 200ms
-        position: absolute
-        transition: transform var(--duration) ease-in-out
-        animation: atom-appear 333ms ease-out forwards
+      > div#atom-layer
+        > canvas.atom-sprite
+          --duration: 200ms
+          position: absolute
+          transition: transform var(--duration) ease-in-out
+          animation: atom-appear 333ms ease-out forwards
 
-        &.flash
-          animation: atom-flash 333ms ease-out
+          &.flash
+            animation: atom-flash 333ms ease-out
 
-        &.dispose
-          animation: atom-dispose 333ms ease-out forwards
+          &.dispose
+            animation: atom-dispose 333ms ease-out forwards
+
+        > div.move-preview
+          opacity: 0.2
+          background-color: white
+          position: absolute
 
   div.preview
     grid-area: 2 / 1

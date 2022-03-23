@@ -1,3 +1,5 @@
+import {ObservableValueImpl} from "../lib/common.js"
+
 export enum Sound {
     BackgroundLoop, Move, Dock, Complete, StartLevel, AtomAppear, AtomDispose, TransitionLevel
 }
@@ -10,8 +12,13 @@ export interface SoundPlayOptions {
 
 export class SoundManager {
     private readonly map: Map<Sound, AudioBuffer> = new Map()
+    private readonly masterGain: GainNode = this.context.createGain()
+
+    readonly enabled: ObservableValueImpl<boolean> = new ObservableValueImpl<boolean>(false)
 
     constructor(private readonly context: AudioContext) {
+        this.enabled.addObserver(enabled => this.masterGain.gain.value = enabled ? 1.0 : 0.0, true)
+        this.masterGain.connect(this.context.destination)
     }
 
     load(): Promise<void>[] {
@@ -38,7 +45,7 @@ export class SoundManager {
         bufferSource.buffer = this.map.get(sound)
         bufferSource.loop = loop
         bufferSource.onended = () => bufferSource.disconnect()
-        bufferSource.connect(gainNode).connect(this.context.destination)
+        bufferSource.connect(gainNode).connect(this.masterGain)
         bufferSource.start()
         return () => {
             const endTime = this.context.currentTime + fadeOutSeconds

@@ -15,9 +15,10 @@ import { TILE_SIZE } from "./display/painter.js";
 import { Sound } from "./sounds.js";
 import { AtomSprite } from "./display/sprites.js";
 class MovePreview {
-    constructor(atomSprite, direction) {
+    constructor(atomSprite, direction, hidePreview) {
         this.atomSprite = atomSprite;
         this.direction = direction;
+        this.hidePreview = hidePreview;
     }
 }
 class ArenaCanvas {
@@ -51,6 +52,21 @@ export class AtomsLayer {
         while (this.element.lastChild !== null) {
             this.element.lastChild.remove();
         }
+    }
+    showMovePreview(source, target) {
+        const div = document.createElement("div");
+        div.classList.add("move-preview");
+        const y0 = Math.min(source.y, target.y) + 0.4;
+        const y1 = Math.max(source.y, target.y) + 0.6;
+        const x0 = Math.min(source.x, target.x) + 0.4;
+        const x1 = Math.max(source.x, target.x) + 0.6;
+        div.style.top = `${y0 * TILE_SIZE}px`;
+        div.style.left = `${x0 * TILE_SIZE}px`;
+        div.style.width = `${(x1 - x0) * TILE_SIZE}px`;
+        div.style.height = `${(y1 - y0) * TILE_SIZE}px`;
+        div.style.borderRadius = `${TILE_SIZE * 0.2}px`;
+        this.element.prepend(div);
+        return () => div.remove();
     }
 }
 export class GameContext {
@@ -109,7 +125,8 @@ export class GameContext {
     showPreviewMove(atomSprite, direction) {
         if (!this.acceptUserInput)
             return;
-        this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction));
+        this.movePreview.ifPresent(preview => preview.hidePreview());
+        this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction, this.atomsLayer.showMovePreview(atomSprite, atomSprite.predictMove(direction))));
     }
     hidePreviewMove(commit) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -117,6 +134,7 @@ export class GameContext {
                 return;
             if (this.movePreview.nonEmpty()) {
                 const preview = this.movePreview.get();
+                preview.hidePreview();
                 this.movePreview = Options.None;
                 if (commit) {
                     yield this.executeMove(preview.atomSprite, preview.direction);

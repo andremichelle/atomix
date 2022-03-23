@@ -1,13 +1,15 @@
 import {Atom, Connector, Level, Map2d} from "./model/model.js"
 import {ControlHost, HistoryStep} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
-import {ArrayUtils, Direction, Hold, Option, Options} from "../lib/common.js"
+import {ArrayUtils, Direction, Hold, Option, Options, Point} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./display/painter.js"
 import {Sound, SoundManager} from "./sounds.js"
 import {AtomSprite} from "./display/sprites.js"
 
 class MovePreview {
-    constructor(readonly atomSprite: AtomSprite, readonly direction: Direction) {
+    constructor(readonly atomSprite: AtomSprite,
+                readonly direction: Direction,
+                readonly hidePreview: () => void) {
     }
 }
 
@@ -49,22 +51,21 @@ export class AtomsLayer {
         }
     }
 
-    /*showMovePreview(source: Point, target: Point) {
-        this.context.save()
-        this.context.scale(devicePixelRatio, devicePixelRatio)
-        this.context.strokeStyle = "rgba(255, 255, 255, 0.1)"
-        this.context.lineCap = "round"
-        this.context.lineWidth = TILE_SIZE / 4
-        const y0 = Math.min(source.y, target.y)
-        const y1 = Math.max(source.y, target.y)
-        const x0 = Math.min(source.x, target.x)
-        const x1 = Math.max(source.x, target.x)
-        this.context.beginPath()
-        this.context.moveTo((x0 + 0.5) * TILE_SIZE, (y0 + 0.5) * TILE_SIZE)
-        this.context.lineTo((x1 + 0.5) * TILE_SIZE, (y1 + 0.5) * TILE_SIZE)
-        this.context.stroke()
-        this.context.restore()
-    }*/
+    showMovePreview(source: Point, target: Point): () => void {
+        const div = document.createElement("div")
+        div.classList.add("move-preview")
+        const y0 = Math.min(source.y, target.y) + 0.4
+        const y1 = Math.max(source.y, target.y) + 0.6
+        const x0 = Math.min(source.x, target.x) + 0.4
+        const x1 = Math.max(source.x, target.x) + 0.6
+        div.style.top = `${y0 * TILE_SIZE}px`
+        div.style.left = `${x0 * TILE_SIZE}px`
+        div.style.width = `${(x1 - x0) * TILE_SIZE}px`
+        div.style.height = `${(y1 - y0) * TILE_SIZE}px`
+        div.style.borderRadius = `${TILE_SIZE * 0.2}px`
+        this.element.prepend(div)
+        return () => div.remove()
+    }
 }
 
 export class GameContext implements ControlHost {
@@ -128,13 +129,16 @@ export class GameContext implements ControlHost {
 
     showPreviewMove(atomSprite: AtomSprite, direction: Direction) {
         if (!this.acceptUserInput) return
-        this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction))
+        this.movePreview.ifPresent(preview => preview.hidePreview())
+        this.movePreview = Options.valueOf(
+            new MovePreview(atomSprite, direction, this.atomsLayer.showMovePreview(atomSprite, atomSprite.predictMove(direction))))
     }
 
     async hidePreviewMove(commit: boolean) {
         if (!this.acceptUserInput) return
         if (this.movePreview.nonEmpty()) {
             const preview = this.movePreview.get()
+            preview.hidePreview()
             this.movePreview = Options.None
             if (commit) {
                 await this.executeMove(preview.atomSprite, preview.direction)

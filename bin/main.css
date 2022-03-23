@@ -246,6 +246,11 @@ main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.flash {
 main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.dispose {
   animation: atom-dispose 333ms ease-out forwards;
 }
+main div.play-field div.layers > div#atom-layer > div.move-preview {
+  opacity: 0.2;
+  background-color: white;
+  position: absolute;
+}
 main div.preview {
   grid-area: 2/1;
   display: flex;
