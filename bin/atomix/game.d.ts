@@ -22,13 +22,18 @@ export declare class GameContext implements ControlHost {
     private readonly atomSprites;
     private readonly history;
     private readonly labelTitle;
+    private readonly labelScore;
     private readonly labelLevelId;
     private readonly labelLevelName;
+    private readonly labelLevelTime;
+    private readonly clock;
     private backgroundLoopStop;
+    private transitionSoundStop;
     private movePreview;
     private historyPointer;
     private level;
     private levelPointer;
+    private score;
     acceptUserInput: boolean;
     constructor(element: HTMLElement, soundManager: SoundManager, arenaPainter: ArenaPainter, atomPainter: AtomPainter, levels: Level[]);
     start(): Promise<void>;

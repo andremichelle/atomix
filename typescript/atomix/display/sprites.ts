@@ -41,7 +41,7 @@ export class AtomSprite implements Point {
         const maxDistance = 12
         const distanceRatio = Math.min(1.0, (distance - minDistance) / (maxDistance - minDistance))
         const minSeconds = 0.2
-        const maxSeconds = 0.8
+        const maxSeconds = 0.7
         const seconds = minSeconds + Math.pow(distanceRatio, 0.75) * (maxSeconds - minSeconds)
         this.canvas.style.setProperty("--duration", `${seconds}s`)
     }

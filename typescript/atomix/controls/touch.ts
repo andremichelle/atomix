@@ -13,7 +13,6 @@ export class TouchControl implements Terminable {
     }
 
     terminate(): void {
-        // TODO terminate current action (if any)
         this.terminator.terminate()
     }
 
@@ -37,6 +36,7 @@ export class TouchControl implements Terminable {
             const startIdentifier = startTouch.identifier
             const startX = (movableAtom.x + 0.5) * TILE_SIZE
             const startY = (movableAtom.y + 0.5) * TILE_SIZE
+            let lastDirection = -1
             const move = (event: TouchEvent) => {
                 const moveTouch: Touch = Array.from(event.targetTouches).find(touch => touch.identifier === startIdentifier)
                 console.assert(moveTouch !== undefined)
@@ -44,7 +44,10 @@ export class TouchControl implements Terminable {
                 const touchX = moveTouch.clientX - rect.left
                 const touchY = moveTouch.clientY - rect.top
                 const direction = this.resolveDirection(touchX - startX, touchY - startY)
-                this.host.showPreviewMove(movableAtom, direction)
+                if (lastDirection != direction) {
+                    this.host.showPreviewMove(movableAtom, direction)
+                    lastDirection = direction
+                }
             }
             const stop = async () => {
                 target.removeEventListener("touchmove", move)

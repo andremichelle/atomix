@@ -69,6 +69,44 @@ export class AtomsLayer {
         return () => div.remove();
     }
 }
+class Clock {
+    constructor(durationInSeconds, clockUpdate, clockComplete) {
+        this.durationInSeconds = durationInSeconds;
+        this.clockUpdate = clockUpdate;
+        this.clockComplete = clockComplete;
+        this.interval = -1;
+        this.seconds = 0;
+    }
+    restart() {
+        this.stop();
+        this.seconds = this.durationInSeconds;
+        this.interval = setInterval(() => {
+            if (this.seconds > 0) {
+                this.seconds--;
+                this.clockUpdate(this.seconds);
+            }
+            else {
+                this.clockComplete();
+            }
+        }, 1000);
+    }
+    stop() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = -1;
+        }
+    }
+    rewind(addScore) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.stop();
+            while (this.seconds > 0) {
+                yield Hold.forFrames(1);
+                addScore();
+                this.clockUpdate(--this.seconds);
+            }
+        });
+    }
+}
 export class GameContext {
     constructor(element, soundManager, arenaPainter, atomPainter, levels) {
         this.element = element;
@@ -81,13 +119,22 @@ export class GameContext {
         this.atomSprites = [];
         this.history = [];
         this.labelTitle = document.getElementById("title");
+        this.labelScore = document.getElementById("score");
         this.labelLevelId = document.getElementById("level-id");
         this.labelLevelName = document.getElementById("level-name");
+        this.labelLevelTime = document.getElementById("level-time");
+        this.clock = new Clock(3 * 60, (seconds) => {
+            const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
+            const ss = (seconds % 60).toString().padStart(2, "0");
+            this.labelLevelTime.textContent = `${mm}:${ss}`;
+        }, () => this.soundManager.play(Sound.ClockElapsed));
         this.backgroundLoopStop = Options.None;
+        this.transitionSoundStop = Options.None;
         this.movePreview = Options.None;
         this.historyPointer = 0;
         this.level = Options.None;
         this.levelPointer = 0;
+        this.score = 0;
         this.acceptUserInput = false;
         document.getElementById("undo-button").addEventListener("click", () => this.undo());
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
@@ -97,9 +144,10 @@ export class GameContext {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.soundManager.play(Sound.TransitionLevel);
+            this.transitionSoundStop = Options.valueOf(this.soundManager.play(Sound.TransitionLevel));
             this.element.classList.remove("invisible");
             yield this.startLevel(this.levels[this.levelPointer]);
+            this.clock.restart();
             this.acceptUserInput = true;
         });
     }
@@ -197,11 +245,14 @@ export class GameContext {
             this.renderMoleculePreview(level.molecule);
             this.element.classList.add("appear");
             yield Hold.forAnimationComplete(this.element);
+            this.transitionSoundStop.ifPresent(stop => stop());
+            this.transitionSoundStop = Options.None;
+            this.soundManager.play(Sound.LevelDocked);
             this.element.classList.remove("appear");
             yield Hold.forFrames(40);
             this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
                 loop: true,
-                fadeInSeconds: 3.0,
+                fadeInSeconds: 0.0,
                 fadeOutSeconds: 5.0
             }));
             ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
@@ -227,6 +278,7 @@ export class GameContext {
             this.soundManager.play(Sound.Dock);
             this.atomSprites.forEach(atomSprite => atomSprite.updatePaint());
             if (this.level.get().isSolved()) {
+                this.clock.stop();
                 yield Hold.forFrames(12);
                 yield this.showSolvedAnimation();
             }
@@ -241,19 +293,24 @@ export class GameContext {
             this.soundManager.play(Sound.Complete);
             this.labelTitle.classList.add("animate");
             yield Hold.forFrames(60);
+            yield this.clock.rewind(() => {
+                this.soundManager.play(Sound.ClockRewind);
+                this.score += 100;
+                this.labelScore.textContent = `${this.score}`.padStart(6, "0");
+            });
             GameContext.sortAtomSprites(this.atomSprites);
             while (this.atomSprites.length > 0) {
                 this.soundManager.play(Sound.AtomDispose);
                 yield this.atomSprites.shift().dispose();
             }
-            const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel);
+            this.transitionSoundStop = Options.valueOf(this.soundManager.play(Sound.TransitionLevel));
             this.element.classList.add("disappear");
             yield Hold.forAnimationComplete(this.element);
             this.element.classList.remove("disappear");
             yield this.startLevel(this.levels[++this.levelPointer]);
-            stopTransitionSound();
             yield Hold.forEvent(this.labelTitle, "animationiteration");
             this.labelTitle.classList.remove("animate");
+            this.clock.restart();
             this.acceptUserInput = true;
         });
     }

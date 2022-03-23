@@ -39,6 +39,7 @@ export class TouchControl {
             const startIdentifier = startTouch.identifier;
             const startX = (movableAtom.x + 0.5) * TILE_SIZE;
             const startY = (movableAtom.y + 0.5) * TILE_SIZE;
+            let lastDirection = -1;
             const move = (event) => {
                 const moveTouch = Array.from(event.targetTouches).find(touch => touch.identifier === startIdentifier);
                 console.assert(moveTouch !== undefined);
@@ -46,7 +47,10 @@ export class TouchControl {
                 const touchX = moveTouch.clientX - rect.left;
                 const touchY = moveTouch.clientY - rect.top;
                 const direction = this.resolveDirection(touchX - startX, touchY - startY);
-                this.host.showPreviewMove(movableAtom, direction);
+                if (lastDirection != direction) {
+                    this.host.showPreviewMove(movableAtom, direction);
+                    lastDirection = direction;
+                }
             };
             const stop = () => __awaiter(this, void 0, void 0, function* () {
                 target.removeEventListener("touchmove", move);

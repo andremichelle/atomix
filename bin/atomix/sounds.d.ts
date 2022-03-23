@@ -4,10 +4,12 @@ export declare enum Sound {
     Move = 1,
     Dock = 2,
     Complete = 3,
-    StartLevel = 4,
+    LevelDocked = 4,
     AtomAppear = 5,
-    AtomDispose = 6,
-    TransitionLevel = 7
+    ClockElapsed = 6,
+    ClockRewind = 7,
+    AtomDispose = 8,
+    TransitionLevel = 9
 }
 export interface SoundPlayOptions {
     loop?: boolean;

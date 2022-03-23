@@ -1,7 +1,8 @@
 import {ObservableValueImpl} from "../lib/common.js"
 
 export enum Sound {
-    BackgroundLoop, Move, Dock, Complete, StartLevel, AtomAppear, AtomDispose, TransitionLevel
+    BackgroundLoop, Move, Dock, Complete, LevelDocked,
+    AtomAppear, ClockElapsed, ClockRewind, AtomDispose, TransitionLevel
 }
 
 export interface SoundPlayOptions {
@@ -14,7 +15,7 @@ export class SoundManager {
     private readonly map: Map<Sound, AudioBuffer> = new Map()
     private readonly masterGain: GainNode = this.context.createGain()
 
-    readonly enabled: ObservableValueImpl<boolean> = new ObservableValueImpl<boolean>(false)
+    readonly enabled: ObservableValueImpl<boolean> = new ObservableValueImpl<boolean>(true)
 
     constructor(private readonly context: AudioContext) {
         this.enabled.addObserver(enabled => this.masterGain.gain.value = enabled ? 1.0 : 0.0, true)
@@ -27,8 +28,10 @@ export class SoundManager {
             this.register(Sound.Move, "samples/move.wav"),
             this.register(Sound.Dock, "samples/dock.wav"),
             this.register(Sound.Complete, "samples/complete.wav"),
-            this.register(Sound.StartLevel, "samples/start-level.wav"),
+            this.register(Sound.LevelDocked, "samples/level-docked.wav"),
             this.register(Sound.AtomAppear, "samples/atom-appear.wav"),
+            this.register(Sound.ClockElapsed, "samples/clock-elapsed.wav"),
+            this.register(Sound.ClockRewind, "samples/clock-rewind.wav"),
             this.register(Sound.AtomDispose, "samples/atom-dispose.wav"),
             this.register(Sound.TransitionLevel, "samples/transition-level.wav"),
         ]

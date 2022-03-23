@@ -14,17 +14,19 @@ export var Sound;
     Sound[Sound["Move"] = 1] = "Move";
     Sound[Sound["Dock"] = 2] = "Dock";
     Sound[Sound["Complete"] = 3] = "Complete";
-    Sound[Sound["StartLevel"] = 4] = "StartLevel";
+    Sound[Sound["LevelDocked"] = 4] = "LevelDocked";
     Sound[Sound["AtomAppear"] = 5] = "AtomAppear";
-    Sound[Sound["AtomDispose"] = 6] = "AtomDispose";
-    Sound[Sound["TransitionLevel"] = 7] = "TransitionLevel";
+    Sound[Sound["ClockElapsed"] = 6] = "ClockElapsed";
+    Sound[Sound["ClockRewind"] = 7] = "ClockRewind";
+    Sound[Sound["AtomDispose"] = 8] = "AtomDispose";
+    Sound[Sound["TransitionLevel"] = 9] = "TransitionLevel";
 })(Sound || (Sound = {}));
 export class SoundManager {
     constructor(context) {
         this.context = context;
         this.map = new Map();
         this.masterGain = this.context.createGain();
-        this.enabled = new ObservableValueImpl(false);
+        this.enabled = new ObservableValueImpl(true);
         this.enabled.addObserver(enabled => this.masterGain.gain.value = enabled ? 1.0 : 0.0, true);
         this.masterGain.connect(this.context.destination);
     }
@@ -34,8 +36,10 @@ export class SoundManager {
             this.register(Sound.Move, "samples/move.wav"),
             this.register(Sound.Dock, "samples/dock.wav"),
             this.register(Sound.Complete, "samples/complete.wav"),
-            this.register(Sound.StartLevel, "samples/start-level.wav"),
+            this.register(Sound.LevelDocked, "samples/level-docked.wav"),
             this.register(Sound.AtomAppear, "samples/atom-appear.wav"),
+            this.register(Sound.ClockElapsed, "samples/clock-elapsed.wav"),
+            this.register(Sound.ClockRewind, "samples/clock-rewind.wav"),
             this.register(Sound.AtomDispose, "samples/atom-dispose.wav"),
             this.register(Sound.TransitionLevel, "samples/transition-level.wav"),
         ];

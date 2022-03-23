@@ -8,8 +8,6 @@ import {Hold} from "./lib/common.js"
 
 /**
  * TODO
- * Revive Move Preview
- * Bonus level graphics
  * Proper layout and scaling for different media sizes
  * Countdown for scoring
  */

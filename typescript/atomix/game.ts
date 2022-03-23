@@ -68,6 +68,45 @@ export class AtomsLayer {
     }
 }
 
+class Clock {
+    private interval: number = -1
+    private seconds: number = 0
+
+    constructor(private readonly durationInSeconds: number,
+                private readonly clockUpdate: (seconds: number) => void,
+                private readonly clockComplete: () => void) {
+    }
+
+    restart(): void {
+        this.stop()
+        this.seconds = this.durationInSeconds
+        this.interval = setInterval(() => {
+            if (this.seconds > 0) {
+                this.seconds--
+                this.clockUpdate(this.seconds)
+            } else {
+                this.clockComplete()
+            }
+        }, 1000)
+    }
+
+    stop(): void {
+        if (this.interval) {
+            clearInterval(this.interval)
+            this.interval = -1
+        }
+    }
+
+    async rewind(addScore: (() => void)): Promise<void> {
+        this.stop()
+        while (this.seconds > 0) {
+            await Hold.forFrames(1)
+            addScore()
+            this.clockUpdate(--this.seconds)
+        }
+    }
+}
+
 export class GameContext implements ControlHost {
     private readonly arenaCanvas: ArenaCanvas = new ArenaCanvas(this.arenaPainter)
     private readonly atomsLayer: AtomsLayer = new AtomsLayer(this.element.querySelector("div#atom-layer"))
@@ -75,16 +114,29 @@ export class GameContext implements ControlHost {
     private readonly history: HistoryStep[] = []
 
     private readonly labelTitle: HTMLElement = document.getElementById("title")
+    private readonly labelScore: HTMLElement = document.getElementById("score")
     private readonly labelLevelId: HTMLElement = document.getElementById("level-id")
     private readonly labelLevelName: HTMLElement = document.getElementById("level-name")
+    private readonly labelLevelTime: HTMLElement = document.getElementById("level-time")
+
+    private readonly clock: Clock = new Clock(
+        3 * 60,
+        (seconds: number) => {
+            const mm = Math.floor(seconds / 60).toString().padStart(2, "0")
+            const ss = (seconds % 60).toString().padStart(2, "0")
+            this.labelLevelTime.textContent = `${mm}:${ss}`
+        }, () => this.soundManager.play(Sound.ClockElapsed))
 
     private backgroundLoopStop: Option<() => void> = Options.None
+    private transitionSoundStop: Option<() => void> = Options.None
 
     private movePreview: Option<MovePreview> = Options.None
     private historyPointer = 0
 
     private level: Option<Level> = Options.None
     private levelPointer = 0
+
+    private score = 0
 
     acceptUserInput: boolean = false
 
@@ -101,9 +153,10 @@ export class GameContext implements ControlHost {
     }
 
     async start() {
-        this.soundManager.play(Sound.TransitionLevel)
+        this.transitionSoundStop = Options.valueOf(this.soundManager.play(Sound.TransitionLevel))
         this.element.classList.remove("invisible")
         await this.startLevel(this.levels[this.levelPointer])
+        this.clock.restart()
         this.acceptUserInput = true
     }
 
@@ -193,11 +246,14 @@ export class GameContext implements ControlHost {
         this.renderMoleculePreview(level.molecule)
         this.element.classList.add("appear")
         await Hold.forAnimationComplete(this.element)
+        this.transitionSoundStop.ifPresent(stop => stop())
+        this.transitionSoundStop = Options.None
+        this.soundManager.play(Sound.LevelDocked)
         this.element.classList.remove("appear")
         await Hold.forFrames(40)
         this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
             loop: true,
-            fadeInSeconds: 3.0,
+            fadeInSeconds: 0.0,
             fadeOutSeconds: 5.0
         }))
         ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
@@ -221,6 +277,7 @@ export class GameContext implements ControlHost {
         this.soundManager.play(Sound.Dock)
         this.atomSprites.forEach(atomSprite => atomSprite.updatePaint())
         if (this.level.get().isSolved()) {
+            this.clock.stop()
             await Hold.forFrames(12)
             await this.showSolvedAnimation()
         }
@@ -234,19 +291,24 @@ export class GameContext implements ControlHost {
         this.soundManager.play(Sound.Complete)
         this.labelTitle.classList.add("animate")
         await Hold.forFrames(60)
+        await this.clock.rewind(() => {
+            this.soundManager.play(Sound.ClockRewind)
+            this.score += 100
+            this.labelScore.textContent = `${this.score}`.padStart(6, "0")
+        })
         GameContext.sortAtomSprites(this.atomSprites)
         while (this.atomSprites.length > 0) {
             this.soundManager.play(Sound.AtomDispose)
             await this.atomSprites.shift().dispose()
         }
-        const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel)
+        this.transitionSoundStop = Options.valueOf(this.soundManager.play(Sound.TransitionLevel))
         this.element.classList.add("disappear")
         await Hold.forAnimationComplete(this.element)
         this.element.classList.remove("disappear")
         await this.startLevel(this.levels[++this.levelPointer])
-        stopTransitionSound()
         await Hold.forEvent(this.labelTitle, "animationiteration")
         this.labelTitle.classList.remove("animate")
+        this.clock.restart()
         this.acceptUserInput = true
     }
 
