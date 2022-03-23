@@ -84,7 +84,7 @@ export class AtomPainter {
         const nx = connection.bond.xAxis;
         const ny = connection.bond.yAxis;
         const nn = Math.sqrt(nx * nx + ny * ny);
-        const length = size * (connected ? 0.5 : 0.5 / nn);
+        const length = size * (connected ? 0.5 : 0.475 / nn);
         for (let order = 0; order < connection.order; order++) {
             const offset = order * bondDistance - (connection.order - 1) * bondDistance * 0.5;
             const min = offset - bondThickness * 0.5;
@@ -92,7 +92,7 @@ export class AtomPainter {
             const gradient = context.createLinearGradient(-min * ny, min * nx, -max * ny, max * nx);
             if (connected) {
                 gradient.addColorStop(0.0, "#777");
-                gradient.addColorStop(0.5, "#AAA");
+                gradient.addColorStop(0.5, "#BBB");
                 gradient.addColorStop(1.0, "#777");
             }
             else {

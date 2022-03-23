@@ -28,6 +28,7 @@ export declare class GameContext implements ControlHost {
     private historyPointer;
     private level;
     private levelPointer;
+    acceptUserInput: boolean;
     constructor(element: HTMLElement, soundManager: SoundManager, arenaPainter: ArenaPainter, atomPainter: AtomPainter, levels: Level[]);
     start(): Promise<void>;
     getTargetElement(): HTMLElement;

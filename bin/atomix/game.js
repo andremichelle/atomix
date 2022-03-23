@@ -72,6 +72,7 @@ export class GameContext {
         this.historyPointer = 0;
         this.level = Options.None;
         this.levelPointer = 0;
+        this.acceptUserInput = false;
         document.getElementById("undo-button").addEventListener("click", () => this.undo());
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
         document.getElementById("reset-button").addEventListener("click", () => this.reset());
@@ -83,6 +84,7 @@ export class GameContext {
             this.soundManager.play(Sound.TransitionLevel);
             this.element.classList.remove("invisible");
             yield this.startLevel(this.levels[this.levelPointer]);
+            this.acceptUserInput = true;
         });
     }
     getTargetElement() {
@@ -105,10 +107,14 @@ export class GameContext {
         return nearestMovableAtom;
     }
     showPreviewMove(atomSprite, direction) {
+        if (!this.acceptUserInput)
+            return;
         this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction));
     }
     hidePreviewMove(commit) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!this.acceptUserInput)
+                return;
             if (this.movePreview.nonEmpty()) {
                 const preview = this.movePreview.get();
                 this.movePreview = Options.None;
@@ -119,25 +125,33 @@ export class GameContext {
         });
     }
     undo() {
-        if (this.historyPointer === 0) {
+        if (!this.acceptUserInput)
             return;
-        }
+        if (this.historyPointer === 0)
+            return;
         this.history[--this.historyPointer].revert();
     }
     redo() {
-        if (this.historyPointer === this.history.length) {
+        if (!this.acceptUserInput)
             return;
-        }
+        if (this.historyPointer === this.history.length)
+            return;
         this.history[this.historyPointer++].execute();
     }
     reset() {
-        this.startLevel(this.levels[this.levelPointer]);
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.acceptUserInput)
+                return;
+            this.acceptUserInput = false;
+            yield this.startLevel(this.levels[this.levelPointer]);
+        });
     }
     solve() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.historyPointer !== 0) {
+            if (!this.acceptUserInput)
                 return;
-            }
+            if (this.historyPointer !== 0)
+                return;
             this.level.ifPresent((level) => __awaiter(this, void 0, void 0, function* () {
                 for (const move of level.solution) {
                     const atomSprite = this.atomSprites.find(atomSprite => {
@@ -173,7 +187,6 @@ export class GameContext {
                 fadeOutSeconds: 5.0
             }));
             ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
-            yield this.solve();
         });
     }
     executeMove(atomSprite, direction) {
@@ -223,9 +236,7 @@ export class GameContext {
             stopTransitionSound();
             yield Hold.forEvent(this.labelTitle, "animationiteration");
             this.labelTitle.classList.remove("animate");
-            return new Promise(resolve => {
-                resolve();
-            });
+            this.acceptUserInput = true;
         });
     }
     resizeTo(width, height) {
