@@ -309,8 +309,9 @@ export class GameContext implements ControlHost {
         this.element.classList.remove("disappear")
         if (++this.levelPointer === this.levels.length) {
             console.log("ALL DONE")
+            return
         } else {
-            await this.startLevel(this.levels[++this.levelPointer])
+            await this.startLevel(this.levels[this.levelPointer])
             await Hold.forEvent(this.labelTitle, "animationiteration")
             this.labelTitle.classList.remove("animate")
             this.clock.restart()
