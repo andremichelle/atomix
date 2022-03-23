@@ -151,7 +151,7 @@ export class GameContext implements ControlHost {
         document.getElementById("reset-button").addEventListener("click", () => this.reset())
         this.labelTitle.addEventListener("touchstart", async (event: TouchEvent) => {
             if (!this.acceptUserInput) return
-            if (event.targetTouches.length > 2) {
+            if (event.targetTouches.length > 1) {
                 await this.solve()
             }
         })
@@ -263,7 +263,7 @@ export class GameContext implements ControlHost {
             loop: true,
             fadeInSeconds: 1.0,
             fadeOutSeconds: 1.0,
-            volume: -6.0
+            volume: -9.0
         }))
 
         ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
