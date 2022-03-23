@@ -4,12 +4,12 @@ import {GameContext} from "./atomix/game.js"
 import {ArenaPainter, AtomPainter} from "./atomix/display/painter.js"
 import {Level} from "./atomix/model/model.js"
 import {SoundManager} from "./atomix/sounds.js"
+import {Hold} from "./lib/common.js"
 
 /**
  * TODO
  * Prevent new inputs while running animations
  * Nice reflection animation when puzzle is solved
- * Moving duration in respect to distance?
  * Bonus level graphics
  * Proper layout and scaling for different media sizes
  * Countdown for scoring
@@ -43,6 +43,12 @@ const showProgress = (() => {
 
     const layerElement: HTMLElement = document.querySelector("div.play-field div.layers")
     const game = new GameContext(layerElement, soundManager, arenaPainter.get(), atomPainter.get(), levels.get())
+    const startButton: HTMLButtonElement = document.querySelector("button.play-button")
+    startButton.onclick = () => {
+        game.start()
+        startButton.classList.add("disappear")
+        Hold.forAnimationComplete(startButton).then(() => startButton.remove())
+    }
 
     // prevent dragging entire document on mobile
     document.addEventListener('touchmove', (event: TouchEvent) => event.preventDefault(), {passive: false})

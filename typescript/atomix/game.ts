@@ -3,7 +3,6 @@ import {ControlHost, HistoryStep} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
 import {ArrayUtils, Direction, Hold, Option, Options} from "../lib/common.js"
 import {ArenaPainter, AtomPainter, TILE_SIZE} from "./display/painter.js"
-import {Easing} from "../lib/easing.js"
 import {Sound, SoundManager} from "./sounds.js"
 import {AtomSprite} from "./display/sprites.js"
 
@@ -78,6 +77,8 @@ export class GameContext implements ControlHost {
     private readonly labelLevelId: HTMLElement = document.getElementById("level-id")
     private readonly labelLevelName: HTMLElement = document.getElementById("level-name")
 
+    private backgroundLoopStop: Option<() => void> = Options.None
+
     private movePreview: Option<MovePreview> = Options.None
     private historyPointer = 0
 
@@ -89,15 +90,17 @@ export class GameContext implements ControlHost {
                 private readonly arenaPainter: ArenaPainter,
                 private readonly atomPainter: AtomPainter,
                 private readonly levels: Level[]) {
-        this.initLevel(this.levels[this.levelPointer])
-
         document.getElementById("undo-button").addEventListener("click", () => this.undo())
         document.getElementById("redo-button").addEventListener("click", () => this.redo())
         document.getElementById("reset-button").addEventListener("click", () => this.reset())
         document.getElementById("solve-button").addEventListener("click", () => this.solve())
-
-        this.soundManager.play(Sound.StartLevel)
         new TouchControl(this)
+    }
+
+    async start() {
+        this.soundManager.play(Sound.TransitionLevel)
+        this.element.classList.remove("invisible")
+        await this.startLevel(this.levels[this.levelPointer])
     }
 
     getTargetElement(): HTMLElement {
@@ -149,7 +152,7 @@ export class GameContext implements ControlHost {
     }
 
     private reset(): void {
-        this.initLevel(this.levels[this.levelPointer])
+        this.startLevel(this.levels[this.levelPointer])
     }
 
     private async solve(): Promise<void> {
@@ -169,6 +172,9 @@ export class GameContext implements ControlHost {
     }
 
     private async showSolvedAnimation(): Promise<void> {
+        this.backgroundLoopStop.ifPresent(stop => stop())
+        this.backgroundLoopStop = Options.None
+
         this.soundManager.play(Sound.Complete)
         this.labelTitle.classList.add("animate")
         await Hold.forFrames(60)
@@ -180,25 +186,19 @@ export class GameContext implements ControlHost {
         })
 
         while (this.atomSprites.length > 0) {
-            this.soundManager.play(Sound.DisposeAtom)
+            this.soundManager.play(Sound.AtomDispose)
             await this.atomSprites.shift().dispose()
         }
 
-        const stopSound = this.soundManager.play(Sound.NextLevel)
-        const boundingClientRect = this.element.getBoundingClientRect()
-        await Hold.forAnimation(phase => {
-            phase = Easing.easeInQuad(phase)
-            this.element.style.top = `${-phase * boundingClientRect.bottom}px`
-        }, 20)
+        const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel)
+        this.element.classList.add("disappear")
+        await Hold.forAnimationComplete(this.element)
+        this.element.classList.remove("disappear")
 
-        this.initLevel(this.levels[++this.levelPointer])
+        await this.startLevel(this.levels[++this.levelPointer])
 
-        await Hold.forAnimation(phase => {
-            phase = Easing.easeOutQuad(phase)
-            this.element.style.top = `${(1.0 - phase) * boundingClientRect.bottom}px`
-        }, 20)
+        stopTransitionSound()
 
-        stopSound()
         await Hold.forEvent(this.labelTitle, "animationiteration")
         this.labelTitle.classList.remove("animate")
         this.soundManager.play(Sound.StartLevel)
@@ -215,10 +215,12 @@ export class GameContext implements ControlHost {
         const toX = target.x
         const toY = target.y
         if (toX === fromX && toY === fromY) return Promise.resolve()
+        const distance = Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY)) // simplified for 2 axis
+        atomSprite.mapMoveDuration(distance)
+        const stopMoveSound = this.soundManager.play(Sound.Move)
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         this.history.push(new HistoryStep(atomSprite, fromX, fromY, toX, toY).execute())
         this.historyPointer = this.history.length
-        const stopMoveSound = this.soundManager.play(Sound.Move)
         await Hold.forTransitionComplete(atomSprite.element())
         stopMoveSound()
         this.soundManager.play(Sound.Dock)
@@ -230,7 +232,7 @@ export class GameContext implements ControlHost {
         return Promise.resolve()
     }
 
-    private initLevel(level: Level): void {
+    private async startLevel(level: Level): Promise<void> {
         level = level.clone()
 
         this.level = Options.valueOf(level)
@@ -243,10 +245,24 @@ export class GameContext implements ControlHost {
 
         this.atomsLayer.removeAllSprites()
         const arena: Map2d = level.arena
-        ArrayUtils.replace(this.atomSprites, this.initAtomSprites(arena))
         this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
         this.arenaCanvas.paint(arena)
         this.renderMoleculePreview(level.molecule)
+
+        this.element.classList.add("appear")
+        await Hold.forAnimationComplete(this.element)
+        this.element.classList.remove("appear")
+
+        this.soundManager.play(Sound.StartLevel)
+        await Hold.forFrames(40)
+
+        this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
+            loop: true,
+            fadeInSeconds: 3.0,
+            fadeOutSeconds: 5.0
+        }))
+
+        ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
     }
 
     private resizeTo(width: number, height: number) {
@@ -255,17 +271,21 @@ export class GameContext implements ControlHost {
         this.element.style.height = `${height}px`
     }
 
-    private initAtomSprites(arena: Map2d): AtomSprite[] {
+    private async initAtomSprites(arena: Map2d): Promise<AtomSprite[]> {
         const atomSprites: AtomSprite[] = []
         let count = 0
-        arena.iterateFields((maybeAtom, x, y) => {
+        arena.iterateFields(async (maybeAtom, x, y) => {
             if (maybeAtom instanceof Atom) {
                 const atomSprite = new AtomSprite(this.atomPainter, arena, maybeAtom, x, y)
-                this.atomsLayer.addSprite(atomSprite)
                 atomSprites.push(atomSprite)
                 count++
             }
         })
+        for (const atomSprite of atomSprites) {
+            this.soundManager.play(Sound.AtomAppear)
+            this.atomsLayer.addSprite(atomSprite)
+            await Hold.forAnimationComplete(atomSprite.element())
+        }
         return atomSprites
     }
 

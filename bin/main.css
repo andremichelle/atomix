@@ -61,6 +61,38 @@ svg.preloader > circle.progress {
   stroke-dashoffset: calc(var(--radius) * 6.2831853 * (1 - var(--percentage)));
 }
 
+@keyframes level-appear {
+  0% {
+    top: -100%;
+  }
+  100% {
+    top: 0;
+  }
+}
+@keyframes level-disappear {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+@keyframes play-button-disappear {
+  0% {
+    top: 50%;
+  }
+  100% {
+    top: 150%;
+  }
+}
+@keyframes atom-appear {
+  0% {
+    filter: brightness(6400%) blur(32px);
+  }
+  100% {
+    filter: brightness(100%) blur(0);
+  }
+}
 @keyframes atom-dispose {
   0% {
     opacity: 1;
@@ -150,11 +182,36 @@ main div.play-field {
   pointer-events: none;
   background-color: #1C1C1C;
   height: 100%;
+  position: relative;
+}
+main div.play-field button.play-button {
+  top: 50%;
+  left: 50%;
+  appearance: none;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 4vw;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-family: "PressStart2P", sans-serif;
+  pointer-events: all;
+  cursor: pointer;
+}
+main div.play-field button.play-button.disappear {
+  animation: play-button-disappear 500ms ease forwards;
 }
 main div.play-field div.layers {
   position: relative;
   pointer-events: all;
   box-shadow: 0 1vmin 2vmin 0 rgba(0, 0, 0, 0.8);
+}
+main div.play-field div.layers.appear {
+  animation: level-appear 1s ease forwards;
+}
+main div.play-field div.layers.disappear {
+  animation: level-disappear 1s ease forwards;
 }
 main div.play-field div.layers > canvas#background-layer, main div.play-field div.layers > div#atom-layer {
   top: 0;
@@ -167,8 +224,10 @@ main div.play-field div.layers > canvas#background-layer, main div.play-field di
   pointer-events: none;
 }
 main div.play-field div.layers > div#atom-layer > canvas.atom-sprite {
+  --duration: 200ms;
   position: absolute;
-  transition: transform 200ms ease-in-out;
+  transition: transform var(--duration) ease-in-out;
+  animation: atom-appear 333ms ease-out forwards;
 }
 main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.dispose {
   animation: atom-dispose 333ms ease-out forwards;

@@ -12,6 +12,7 @@ import { fetchAndTranslateLevels, fetchAndTranslateSolutions } from "./atomix/mo
 import { GameContext } from "./atomix/game.js";
 import { ArenaPainter, AtomPainter } from "./atomix/display/painter.js";
 import { SoundManager } from "./atomix/sounds.js";
+import { Hold } from "./lib/common.js";
 const showProgress = (() => {
     const progress = document.querySelector("svg.preloader");
     window.onerror = () => progress.classList.add("error");
@@ -34,6 +35,12 @@ const showProgress = (() => {
     yield boot.waitForCompletion();
     const layerElement = document.querySelector("div.play-field div.layers");
     const game = new GameContext(layerElement, soundManager, arenaPainter.get(), atomPainter.get(), levels.get());
+    const startButton = document.querySelector("button.play-button");
+    startButton.onclick = () => {
+        game.start();
+        startButton.classList.add("disappear");
+        Hold.forAnimationComplete(startButton).then(() => startButton.remove());
+    };
     document.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
     document.addEventListener('dblclick', (event) => event.preventDefault(), { passive: false });
     const resize = () => document.body.style.height = `${window.innerHeight}px`;

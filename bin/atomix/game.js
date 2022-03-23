@@ -12,7 +12,6 @@ import { HistoryStep } from "./controls/controls.js";
 import { TouchControl } from "./controls/touch.js";
 import { ArrayUtils, Hold, Options } from "../lib/common.js";
 import { TILE_SIZE } from "./display/painter.js";
-import { Easing } from "../lib/easing.js";
 import { Sound } from "./sounds.js";
 import { AtomSprite } from "./display/sprites.js";
 class MovePreview {
@@ -68,17 +67,23 @@ export class GameContext {
         this.labelTitle = document.getElementById("title");
         this.labelLevelId = document.getElementById("level-id");
         this.labelLevelName = document.getElementById("level-name");
+        this.backgroundLoopStop = Options.None;
         this.movePreview = Options.None;
         this.historyPointer = 0;
         this.level = Options.None;
         this.levelPointer = 0;
-        this.initLevel(this.levels[this.levelPointer]);
         document.getElementById("undo-button").addEventListener("click", () => this.undo());
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
         document.getElementById("reset-button").addEventListener("click", () => this.reset());
         document.getElementById("solve-button").addEventListener("click", () => this.solve());
-        this.soundManager.play(Sound.StartLevel);
         new TouchControl(this);
+    }
+    start() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.soundManager.play(Sound.TransitionLevel);
+            this.element.classList.remove("invisible");
+            yield this.startLevel(this.levels[this.levelPointer]);
+        });
     }
     getTargetElement() {
         return this.element;
@@ -126,7 +131,7 @@ export class GameContext {
         this.history[this.historyPointer++].execute();
     }
     reset() {
-        this.initLevel(this.levels[this.levelPointer]);
+        this.startLevel(this.levels[this.levelPointer]);
     }
     solve() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -147,6 +152,8 @@ export class GameContext {
     }
     showSolvedAnimation() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.backgroundLoopStop.ifPresent(stop => stop());
+            this.backgroundLoopStop = Options.None;
             this.soundManager.play(Sound.Complete);
             this.labelTitle.classList.add("animate");
             yield Hold.forFrames(60);
@@ -158,21 +165,15 @@ export class GameContext {
                 return a.x - b.x;
             });
             while (this.atomSprites.length > 0) {
-                this.soundManager.play(Sound.DisposeAtom);
+                this.soundManager.play(Sound.AtomDispose);
                 yield this.atomSprites.shift().dispose();
             }
-            const stopSound = this.soundManager.play(Sound.NextLevel);
-            const boundingClientRect = this.element.getBoundingClientRect();
-            yield Hold.forAnimation(phase => {
-                phase = Easing.easeInQuad(phase);
-                this.element.style.top = `${-phase * boundingClientRect.bottom}px`;
-            }, 20);
-            this.initLevel(this.levels[++this.levelPointer]);
-            yield Hold.forAnimation(phase => {
-                phase = Easing.easeOutQuad(phase);
-                this.element.style.top = `${(1.0 - phase) * boundingClientRect.bottom}px`;
-            }, 20);
-            stopSound();
+            const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel);
+            this.element.classList.add("disappear");
+            yield Hold.forAnimationComplete(this.element);
+            this.element.classList.remove("disappear");
+            yield this.startLevel(this.levels[++this.levelPointer]);
+            stopTransitionSound();
             yield Hold.forEvent(this.labelTitle, "animationiteration");
             this.labelTitle.classList.remove("animate");
             this.soundManager.play(Sound.StartLevel);
@@ -190,10 +191,12 @@ export class GameContext {
             const toY = target.y;
             if (toX === fromX && toY === fromY)
                 return Promise.resolve();
+            const distance = Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY));
+            atomSprite.mapMoveDuration(distance);
+            const stopMoveSound = this.soundManager.play(Sound.Move);
             this.history.splice(this.historyPointer, this.history.length - this.historyPointer);
             this.history.push(new HistoryStep(atomSprite, fromX, fromY, toX, toY).execute());
             this.historyPointer = this.history.length;
-            const stopMoveSound = this.soundManager.play(Sound.Move);
             yield Hold.forTransitionComplete(atomSprite.element());
             stopMoveSound();
             this.soundManager.play(Sound.Dock);
@@ -205,19 +208,31 @@ export class GameContext {
             return Promise.resolve();
         });
     }
-    initLevel(level) {
-        level = level.clone();
-        this.level = Options.valueOf(level);
-        this.historyPointer = 0;
-        ArrayUtils.clear(this.history);
-        this.labelLevelId.textContent = level.id.padStart(2, "0");
-        this.labelLevelName.textContent = level.name;
-        this.atomsLayer.removeAllSprites();
-        const arena = level.arena;
-        ArrayUtils.replace(this.atomSprites, this.initAtomSprites(arena));
-        this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE);
-        this.arenaCanvas.paint(arena);
-        this.renderMoleculePreview(level.molecule);
+    startLevel(level) {
+        return __awaiter(this, void 0, void 0, function* () {
+            level = level.clone();
+            this.level = Options.valueOf(level);
+            this.historyPointer = 0;
+            ArrayUtils.clear(this.history);
+            this.labelLevelId.textContent = level.id.padStart(2, "0");
+            this.labelLevelName.textContent = level.name;
+            this.atomsLayer.removeAllSprites();
+            const arena = level.arena;
+            this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE);
+            this.arenaCanvas.paint(arena);
+            this.renderMoleculePreview(level.molecule);
+            this.element.classList.add("appear");
+            yield Hold.forAnimationComplete(this.element);
+            this.element.classList.remove("appear");
+            this.soundManager.play(Sound.StartLevel);
+            yield Hold.forFrames(40);
+            this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
+                loop: true,
+                fadeInSeconds: 3.0,
+                fadeOutSeconds: 5.0
+            }));
+            ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
+        });
     }
     resizeTo(width, height) {
         this.arenaCanvas.resizeTo(width, height);
@@ -225,17 +240,23 @@ export class GameContext {
         this.element.style.height = `${height}px`;
     }
     initAtomSprites(arena) {
-        const atomSprites = [];
-        let count = 0;
-        arena.iterateFields((maybeAtom, x, y) => {
-            if (maybeAtom instanceof Atom) {
-                const atomSprite = new AtomSprite(this.atomPainter, arena, maybeAtom, x, y);
+        return __awaiter(this, void 0, void 0, function* () {
+            const atomSprites = [];
+            let count = 0;
+            arena.iterateFields((maybeAtom, x, y) => __awaiter(this, void 0, void 0, function* () {
+                if (maybeAtom instanceof Atom) {
+                    const atomSprite = new AtomSprite(this.atomPainter, arena, maybeAtom, x, y);
+                    atomSprites.push(atomSprite);
+                    count++;
+                }
+            }));
+            for (const atomSprite of atomSprites) {
+                this.soundManager.play(Sound.AtomAppear);
                 this.atomsLayer.addSprite(atomSprite);
-                atomSprites.push(atomSprite);
-                count++;
+                yield Hold.forAnimationComplete(atomSprite.element());
             }
+            return atomSprites;
         });
-        return atomSprites;
     }
     renderMoleculePreview(molecule) {
         const canvas = document.querySelector(".preview canvas");

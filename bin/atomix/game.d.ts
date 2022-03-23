@@ -23,11 +23,13 @@ export declare class GameContext implements ControlHost {
     private readonly labelTitle;
     private readonly labelLevelId;
     private readonly labelLevelName;
+    private backgroundLoopStop;
     private movePreview;
     private historyPointer;
     private level;
     private levelPointer;
     constructor(element: HTMLElement, soundManager: SoundManager, arenaPainter: ArenaPainter, atomPainter: AtomPainter, levels: Level[]);
+    start(): Promise<void>;
     getTargetElement(): HTMLElement;
     nearestAtomSprite(x: number, y: number): AtomSprite | null;
     showPreviewMove(atomSprite: AtomSprite, direction: Direction): void;
@@ -38,7 +40,7 @@ export declare class GameContext implements ControlHost {
     private solve;
     private showSolvedAnimation;
     private executeMove;
-    private initLevel;
+    private startLevel;
     private resizeTo;
     private initAtomSprites;
     private renderMoleculePreview;

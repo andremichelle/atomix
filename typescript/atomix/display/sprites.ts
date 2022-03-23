@@ -36,6 +36,16 @@ export class AtomSprite implements Point {
         this.context.restore()
     }
 
+    mapMoveDuration(distance: number): void {
+        const minDistance = 1
+        const maxDistance = 12
+        const distanceRatio = Math.min(1.0, (distance - minDistance) / (maxDistance - minDistance))
+        const minSeconds = 0.2
+        const maxSeconds = 0.8
+        const seconds = minSeconds + Math.pow(distanceRatio, 0.75) * (maxSeconds - minSeconds)
+        this.canvas.style.setProperty("--duration", `${seconds}s`)
+    }
+
     moveTo(field: Point) {
         const atom: Atom = <Atom>this.arena.getField(this.x, this.y)
         this.arena.setField(this.x, this.y, Tile.None)

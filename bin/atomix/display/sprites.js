@@ -31,6 +31,15 @@ export class AtomSprite {
         this.atomPainter.paint(this.context, this.atom, this.getConnected(), TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE);
         this.context.restore();
     }
+    mapMoveDuration(distance) {
+        const minDistance = 1;
+        const maxDistance = 12;
+        const distanceRatio = Math.min(1.0, (distance - minDistance) / (maxDistance - minDistance));
+        const minSeconds = 0.2;
+        const maxSeconds = 0.8;
+        const seconds = minSeconds + Math.pow(distanceRatio, 0.75) * (maxSeconds - minSeconds);
+        this.canvas.style.setProperty("--duration", `${seconds}s`);
+    }
     moveTo(field) {
         const atom = this.arena.getField(this.x, this.y);
         this.arena.setField(this.x, this.y, Tile.None);

@@ -13,6 +13,7 @@ export declare class AtomSprite implements Point {
     constructor(atomPainter: AtomPainter, arena: Map2d, atom: Atom, x: number, y: number);
     element(): HTMLElement;
     updatePaint(): void;
+    mapMoveDuration(distance: number): void;
     moveTo(field: Point): void;
     dispose(): Promise<void>;
     predictMove(direction: Direction): Point;
