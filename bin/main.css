@@ -93,6 +93,17 @@ svg.preloader > circle.progress {
     filter: brightness(100%) blur(0);
   }
 }
+@keyframes atom-flash {
+  0% {
+    filter: brightness(100%) blur(0);
+  }
+  25% {
+    filter: brightness(6400%) blur(32px);
+  }
+  100% {
+    filter: brightness(100%) blur(0);
+  }
+}
 @keyframes atom-dispose {
   0% {
     opacity: 1;
@@ -228,6 +239,9 @@ main div.play-field div.layers > div#atom-layer > canvas.atom-sprite {
   position: absolute;
   transition: transform var(--duration) ease-in-out;
   animation: atom-appear 333ms ease-out forwards;
+}
+main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.flash {
+  animation: atom-flash 333ms ease-out;
 }
 main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.dispose {
   animation: atom-dispose 333ms ease-out forwards;

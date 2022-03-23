@@ -154,6 +154,7 @@ export class GameContext {
         return __awaiter(this, void 0, void 0, function* () {
             this.backgroundLoopStop.ifPresent(stop => stop());
             this.backgroundLoopStop = Options.None;
+            this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"));
             this.soundManager.play(Sound.Complete);
             this.labelTitle.classList.add("animate");
             yield Hold.forFrames(60);

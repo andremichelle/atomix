@@ -9,7 +9,6 @@ import {Hold} from "./lib/common.js"
 /**
  * TODO
  * Prevent new inputs while running animations
- * Nice reflection animation when puzzle is solved
  * Bonus level graphics
  * Proper layout and scaling for different media sizes
  * Countdown for scoring

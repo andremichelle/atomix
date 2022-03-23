@@ -175,6 +175,8 @@ export class GameContext implements ControlHost {
         this.backgroundLoopStop.ifPresent(stop => stop())
         this.backgroundLoopStop = Options.None
 
+        this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"))
+
         this.soundManager.play(Sound.Complete)
         this.labelTitle.classList.add("animate")
         await Hold.forFrames(60)
