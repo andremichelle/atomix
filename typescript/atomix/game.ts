@@ -87,6 +87,7 @@ class Clock {
                 this.clockUpdate(this.seconds)
             } else {
                 this.clockComplete()
+                this.stop()
             }
         }, 1000)
     }
