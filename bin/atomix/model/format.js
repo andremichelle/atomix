@@ -55,10 +55,6 @@ export const fetchAndTranslateLevels = (url, solutions) => __awaiter(void 0, voi
         ["8", AtomKind.AtomBromine],
         ["9", AtomKind.AtomPhosphorus],
         ["o", AtomKind.AtomCrystal],
-        ["A", AtomKind.ConnectorHorizontal],
-        ["B", AtomKind.ConnectorSlash],
-        ["C", AtomKind.ConnectorVertical],
-        ["D", AtomKind.ConnectorBackSlash],
         ["E", AtomKind.CrystalE],
         ["F", AtomKind.CrystalF],
         ["G", AtomKind.CrystalG],
@@ -95,7 +91,9 @@ export const fetchAndTranslateLevels = (url, solutions) => __awaiter(void 0, voi
         const atomsFormat = level['atoms'];
         for (const key in atomsFormat) {
             const atom = atomsFormat[key];
-            const item = new Atom(itemKindMap.get(atom[0]), atom[1].split("").map(key => bondTypesMap.get(key)));
+            const kind = itemKindMap.get(atom[0]);
+            console.assert(kind !== undefined);
+            const item = new Atom(kind, atom[1].split("").map(key => bondTypesMap.get(key)));
             const uniqueID = atom.join("");
             const cached = uniqueItemsMap.get(uniqueID);
             if (cached === undefined) {

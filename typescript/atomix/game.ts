@@ -171,43 +171,38 @@ export class GameContext implements ControlHost {
         })
     }
 
-    private async showSolvedAnimation(): Promise<void> {
-        this.backgroundLoopStop.ifPresent(stop => stop())
-        this.backgroundLoopStop = Options.None
+    private async startLevel(level: Level): Promise<void> {
+        level = level.clone()
 
-        this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"))
+        this.level = Options.valueOf(level)
 
-        this.soundManager.play(Sound.Complete)
-        this.labelTitle.classList.add("animate")
-        await Hold.forFrames(60)
+        this.historyPointer = 0
+        ArrayUtils.clear(this.history)
 
-        this.atomSprites.sort((a: AtomSprite, b: AtomSprite) => {
-            if (a.y > b.y) return 1
-            if (a.y < b.y) return -1
-            return a.x - b.x
-        })
+        this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
+        this.labelLevelName.textContent = level.name
 
-        while (this.atomSprites.length > 0) {
-            this.soundManager.play(Sound.AtomDispose)
-            await this.atomSprites.shift().dispose()
-        }
+        this.atomsLayer.removeAllSprites()
+        const arena: Map2d = level.arena
+        this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
+        this.arenaCanvas.paint(arena)
+        this.renderMoleculePreview(level.molecule)
 
-        const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel)
-        this.element.classList.add("disappear")
+        this.element.classList.add("appear")
         await Hold.forAnimationComplete(this.element)
-        this.element.classList.remove("disappear")
+        this.element.classList.remove("appear")
 
-        await this.startLevel(this.levels[++this.levelPointer])
+        await Hold.forFrames(40)
 
-        stopTransitionSound()
+        this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
+            loop: true,
+            fadeInSeconds: 3.0,
+            fadeOutSeconds: 5.0
+        }))
 
-        await Hold.forEvent(this.labelTitle, "animationiteration")
-        this.labelTitle.classList.remove("animate")
-        this.soundManager.play(Sound.StartLevel)
+        ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
 
-        return new Promise<void>(resolve => {
-            resolve()
-        })
+        await this.solve()
     }
 
     private async executeMove(atomSprite: AtomSprite, direction: Direction): Promise<void> {
@@ -234,37 +229,38 @@ export class GameContext implements ControlHost {
         return Promise.resolve()
     }
 
-    private async startLevel(level: Level): Promise<void> {
-        level = level.clone()
+    private async showSolvedAnimation(): Promise<void> {
+        this.backgroundLoopStop.ifPresent(stop => stop())
+        this.backgroundLoopStop = Options.None
 
-        this.level = Options.valueOf(level)
+        this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"))
 
-        this.historyPointer = 0
-        ArrayUtils.clear(this.history)
+        this.soundManager.play(Sound.Complete)
+        this.labelTitle.classList.add("animate")
+        await Hold.forFrames(60)
 
-        this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
-        this.labelLevelName.textContent = level.name
+        GameContext.sortAtomSprites(this.atomSprites)
 
-        this.atomsLayer.removeAllSprites()
-        const arena: Map2d = level.arena
-        this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
-        this.arenaCanvas.paint(arena)
-        this.renderMoleculePreview(level.molecule)
+        while (this.atomSprites.length > 0) {
+            this.soundManager.play(Sound.AtomDispose)
+            await this.atomSprites.shift().dispose()
+        }
 
-        this.element.classList.add("appear")
+        const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel)
+        this.element.classList.add("disappear")
         await Hold.forAnimationComplete(this.element)
-        this.element.classList.remove("appear")
+        this.element.classList.remove("disappear")
 
-        this.soundManager.play(Sound.StartLevel)
-        await Hold.forFrames(40)
+        await this.startLevel(this.levels[++this.levelPointer])
 
-        this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
-            loop: true,
-            fadeInSeconds: 3.0,
-            fadeOutSeconds: 5.0
-        }))
+        stopTransitionSound()
 
-        ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
+        await Hold.forEvent(this.labelTitle, "animationiteration")
+        this.labelTitle.classList.remove("animate")
+
+        return new Promise<void>(resolve => {
+            resolve()
+        })
     }
 
     private resizeTo(width: number, height: number) {
@@ -283,6 +279,7 @@ export class GameContext implements ControlHost {
                 count++
             }
         })
+        GameContext.sortAtomSprites(atomSprites)
         for (const atomSprite of atomSprites) {
             this.soundManager.play(Sound.AtomAppear)
             this.atomsLayer.addSprite(atomSprite)
@@ -312,5 +309,13 @@ export class GameContext implements ControlHost {
             }
         })
         context.restore()
+    }
+
+    private static sortAtomSprites(atomSprites: AtomSprite[]) {
+        atomSprites.sort((a: AtomSprite, b: AtomSprite) => {
+            if (a.y > b.y) return 1
+            if (a.y < b.y) return -1
+            return a.x - b.x
+        })
     }
 }

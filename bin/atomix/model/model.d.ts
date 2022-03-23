@@ -10,18 +10,14 @@ export declare enum AtomKind {
     AtomBromine = 7,
     AtomPhosphorus = 8,
     AtomCrystal = 9,
-    ConnectorHorizontal = 10,
-    ConnectorSlash = 11,
-    ConnectorVertical = 12,
-    ConnectorBackSlash = 13,
-    CrystalE = 14,
-    CrystalF = 15,
-    CrystalG = 16,
-    CrystalH = 17,
-    CrystalI = 18,
-    CrystalJ = 19,
-    CrystalK = 20,
-    CrystalL = 21
+    CrystalE = 10,
+    CrystalF = 11,
+    CrystalG = 12,
+    CrystalH = 13,
+    CrystalI = 14,
+    CrystalJ = 15,
+    CrystalK = 16,
+    CrystalL = 17
 }
 export declare const resolveAtomName: (kind: AtomKind) => Option<string>;
 export declare enum Adjacent {

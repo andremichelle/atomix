@@ -49,14 +49,14 @@ export class AtomPainter {
     }
     static load() {
         return __awaiter(this, void 0, void 0, function* () {
-            return new AtomPainter(yield loadImageBitmaps(index => `./assets/atom${index}.png`, 9));
+            return new AtomPainter(yield loadImageBitmaps(index => `./assets/atom${index}.png`, 18));
         });
     }
     paint(context, atom, connected, x, y, size) {
         context.save();
         context.translate(x, y);
         const radius = size * 0.33;
-        const shadowY = size / 5;
+        const shadowY = size / 6;
         const gradient = context.createRadialGradient(0.0, shadowY, 0.0, 0.0, shadowY, radius);
         gradient.addColorStop(0.6, "rgba(0, 0, 0, 0.8)");
         gradient.addColorStop(1.0, "rgba(0, 0, 0, 0.0)");
@@ -90,9 +90,16 @@ export class AtomPainter {
             const min = offset - bondThickness * 0.5;
             const max = offset + bondThickness * 0.5;
             const gradient = context.createLinearGradient(-min * ny, min * nx, -max * ny, max * nx);
-            gradient.addColorStop(0.0, "#555");
-            gradient.addColorStop(0.5, "#999");
-            gradient.addColorStop(1.0, "#555");
+            if (connected) {
+                gradient.addColorStop(0.0, "#777");
+                gradient.addColorStop(0.5, "#AAA");
+                gradient.addColorStop(1.0, "#777");
+            }
+            else {
+                gradient.addColorStop(0.0, "#555");
+                gradient.addColorStop(0.5, "#999");
+                gradient.addColorStop(1.0, "#555");
+            }
             context.strokeStyle = gradient;
             context.beginPath();
             context.moveTo(-ny * offset, nx * offset);

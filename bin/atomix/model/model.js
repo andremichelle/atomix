@@ -11,18 +11,14 @@ export var AtomKind;
     AtomKind[AtomKind["AtomBromine"] = 7] = "AtomBromine";
     AtomKind[AtomKind["AtomPhosphorus"] = 8] = "AtomPhosphorus";
     AtomKind[AtomKind["AtomCrystal"] = 9] = "AtomCrystal";
-    AtomKind[AtomKind["ConnectorHorizontal"] = 10] = "ConnectorHorizontal";
-    AtomKind[AtomKind["ConnectorSlash"] = 11] = "ConnectorSlash";
-    AtomKind[AtomKind["ConnectorVertical"] = 12] = "ConnectorVertical";
-    AtomKind[AtomKind["ConnectorBackSlash"] = 13] = "ConnectorBackSlash";
-    AtomKind[AtomKind["CrystalE"] = 14] = "CrystalE";
-    AtomKind[AtomKind["CrystalF"] = 15] = "CrystalF";
-    AtomKind[AtomKind["CrystalG"] = 16] = "CrystalG";
-    AtomKind[AtomKind["CrystalH"] = 17] = "CrystalH";
-    AtomKind[AtomKind["CrystalI"] = 18] = "CrystalI";
-    AtomKind[AtomKind["CrystalJ"] = 19] = "CrystalJ";
-    AtomKind[AtomKind["CrystalK"] = 20] = "CrystalK";
-    AtomKind[AtomKind["CrystalL"] = 21] = "CrystalL";
+    AtomKind[AtomKind["CrystalE"] = 10] = "CrystalE";
+    AtomKind[AtomKind["CrystalF"] = 11] = "CrystalF";
+    AtomKind[AtomKind["CrystalG"] = 12] = "CrystalG";
+    AtomKind[AtomKind["CrystalH"] = 13] = "CrystalH";
+    AtomKind[AtomKind["CrystalI"] = 14] = "CrystalI";
+    AtomKind[AtomKind["CrystalJ"] = 15] = "CrystalJ";
+    AtomKind[AtomKind["CrystalK"] = 16] = "CrystalK";
+    AtomKind[AtomKind["CrystalL"] = 17] = "CrystalL";
 })(AtomKind || (AtomKind = {}));
 export const resolveAtomName = (() => {
     const name = new Map([

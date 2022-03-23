@@ -8,6 +8,7 @@ import {Hold} from "./lib/common.js"
 
 /**
  * TODO
+ * Revive Move Preview
  * Prevent new inputs while running animations
  * Bonus level graphics
  * Proper layout and scaling for different media sizes

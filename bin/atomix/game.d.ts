@@ -38,10 +38,11 @@ export declare class GameContext implements ControlHost {
     private redo;
     private reset;
     private solve;
-    private showSolvedAnimation;
-    private executeMove;
     private startLevel;
+    private executeMove;
+    private showSolvedAnimation;
     private resizeTo;
     private initAtomSprites;
     private renderMoleculePreview;
+    private static sortAtomSprites;
 }

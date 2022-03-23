@@ -150,37 +150,30 @@ export class GameContext {
             }));
         });
     }
-    showSolvedAnimation() {
+    startLevel(level) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.backgroundLoopStop.ifPresent(stop => stop());
-            this.backgroundLoopStop = Options.None;
-            this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"));
-            this.soundManager.play(Sound.Complete);
-            this.labelTitle.classList.add("animate");
-            yield Hold.forFrames(60);
-            this.atomSprites.sort((a, b) => {
-                if (a.y > b.y)
-                    return 1;
-                if (a.y < b.y)
-                    return -1;
-                return a.x - b.x;
-            });
-            while (this.atomSprites.length > 0) {
-                this.soundManager.play(Sound.AtomDispose);
-                yield this.atomSprites.shift().dispose();
-            }
-            const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel);
-            this.element.classList.add("disappear");
+            level = level.clone();
+            this.level = Options.valueOf(level);
+            this.historyPointer = 0;
+            ArrayUtils.clear(this.history);
+            this.labelLevelId.textContent = level.id.padStart(2, "0");
+            this.labelLevelName.textContent = level.name;
+            this.atomsLayer.removeAllSprites();
+            const arena = level.arena;
+            this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE);
+            this.arenaCanvas.paint(arena);
+            this.renderMoleculePreview(level.molecule);
+            this.element.classList.add("appear");
             yield Hold.forAnimationComplete(this.element);
-            this.element.classList.remove("disappear");
-            yield this.startLevel(this.levels[++this.levelPointer]);
-            stopTransitionSound();
-            yield Hold.forEvent(this.labelTitle, "animationiteration");
-            this.labelTitle.classList.remove("animate");
-            this.soundManager.play(Sound.StartLevel);
-            return new Promise(resolve => {
-                resolve();
-            });
+            this.element.classList.remove("appear");
+            yield Hold.forFrames(40);
+            this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
+                loop: true,
+                fadeInSeconds: 3.0,
+                fadeOutSeconds: 5.0
+            }));
+            ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
+            yield this.solve();
         });
     }
     executeMove(atomSprite, direction) {
@@ -209,30 +202,30 @@ export class GameContext {
             return Promise.resolve();
         });
     }
-    startLevel(level) {
+    showSolvedAnimation() {
         return __awaiter(this, void 0, void 0, function* () {
-            level = level.clone();
-            this.level = Options.valueOf(level);
-            this.historyPointer = 0;
-            ArrayUtils.clear(this.history);
-            this.labelLevelId.textContent = level.id.padStart(2, "0");
-            this.labelLevelName.textContent = level.name;
-            this.atomsLayer.removeAllSprites();
-            const arena = level.arena;
-            this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE);
-            this.arenaCanvas.paint(arena);
-            this.renderMoleculePreview(level.molecule);
-            this.element.classList.add("appear");
+            this.backgroundLoopStop.ifPresent(stop => stop());
+            this.backgroundLoopStop = Options.None;
+            this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("flash"));
+            this.soundManager.play(Sound.Complete);
+            this.labelTitle.classList.add("animate");
+            yield Hold.forFrames(60);
+            GameContext.sortAtomSprites(this.atomSprites);
+            while (this.atomSprites.length > 0) {
+                this.soundManager.play(Sound.AtomDispose);
+                yield this.atomSprites.shift().dispose();
+            }
+            const stopTransitionSound = this.soundManager.play(Sound.TransitionLevel);
+            this.element.classList.add("disappear");
             yield Hold.forAnimationComplete(this.element);
-            this.element.classList.remove("appear");
-            this.soundManager.play(Sound.StartLevel);
-            yield Hold.forFrames(40);
-            this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
-                loop: true,
-                fadeInSeconds: 3.0,
-                fadeOutSeconds: 5.0
-            }));
-            ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
+            this.element.classList.remove("disappear");
+            yield this.startLevel(this.levels[++this.levelPointer]);
+            stopTransitionSound();
+            yield Hold.forEvent(this.labelTitle, "animationiteration");
+            this.labelTitle.classList.remove("animate");
+            return new Promise(resolve => {
+                resolve();
+            });
         });
     }
     resizeTo(width, height) {
@@ -251,6 +244,7 @@ export class GameContext {
                     count++;
                 }
             }));
+            GameContext.sortAtomSprites(atomSprites);
             for (const atomSprite of atomSprites) {
                 this.soundManager.play(Sound.AtomAppear);
                 this.atomsLayer.addSprite(atomSprite);
@@ -279,6 +273,15 @@ export class GameContext {
             }
         });
         context.restore();
+    }
+    static sortAtomSprites(atomSprites) {
+        atomSprites.sort((a, b) => {
+            if (a.y > b.y)
+                return 1;
+            if (a.y < b.y)
+                return -1;
+            return a.x - b.x;
+        });
     }
 }
 //# sourceMappingURL=game.js.map

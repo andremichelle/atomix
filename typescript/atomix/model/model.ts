@@ -3,7 +3,6 @@ import {Direction, Option, Options} from "../../lib/common.js"
 export enum AtomKind {
     AtomHydrogen, AtomCarbon, AtomOxygen, AtomNitrogen, AtomSulphur,
     AtomFluorine, AtomChlorine, AtomBromine, AtomPhosphorus, AtomCrystal,
-    ConnectorHorizontal, ConnectorSlash, ConnectorVertical, ConnectorBackSlash,
     CrystalE, CrystalF, CrystalG, CrystalH,
     CrystalI, CrystalJ, CrystalK, CrystalL
 }
@@ -24,7 +23,6 @@ export const resolveAtomName = (() => {
         return Options.valueOf(name.get(kind))
     }
 })()
-
 
 export enum Adjacent {
     Prev = -1, Same = 0, Next = 1
