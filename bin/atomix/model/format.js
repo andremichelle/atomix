@@ -7,8 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Atom, AtomKind, Bond, Connector, Level, Map2d, Move, Tile } from "./model.js";
 import { Direction } from "../../lib/common.js";
+import { Atom, AtomKind, Bond, Connector, Level, Map2d, Move, Tile } from "./model.js";
 export const fetchAndTranslateSolutions = (url) => __awaiter(void 0, void 0, void 0, function* () {
     const deserializeMove = (code) => {
         const codeStart = "a".codePointAt(0);

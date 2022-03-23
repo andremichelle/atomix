@@ -7,6 +7,7 @@ export declare class AtomSprite implements Point {
     readonly atom: Atom;
     x: number;
     y: number;
+    private static PADDING;
     private readonly canvas;
     private readonly context;
     constructor(atomPainter: AtomPainter, arena: Map2d, atom: Atom, x: number, y: number);

@@ -1,7 +1,6 @@
 // https://raw.githubusercontent.com/figlief/kp-atomix/master/docs/atomix-json-format.txt
-// Atomix level sets in JSON format.
-import {Atom, AtomKind, Bond, Connector, Level, Map2d, Move, Tile} from "./model.js"
 import {Direction} from "../../lib/common.js"
+import {Atom, AtomKind, Bond, Connector, Level, Map2d, Move, Tile} from "./model.js"
 
 export const fetchAndTranslateSolutions = async (url: string): Promise<Move[][]> => {
     const deserializeMove = (code: string): Move => {

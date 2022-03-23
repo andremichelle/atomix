@@ -10,6 +10,13 @@ export class AtomSprite {
         this.y = y;
         this.canvas = document.createElement("canvas");
         this.context = this.canvas.getContext("2d");
+        this.canvas.style.top = `${-AtomSprite.PADDING}px`;
+        this.canvas.style.left = `${-AtomSprite.PADDING}px`;
+        const size = TILE_SIZE + AtomSprite.PADDING * 2;
+        this.canvas.width = size * devicePixelRatio;
+        this.canvas.height = size * devicePixelRatio;
+        this.canvas.style.width = `${size}px`;
+        this.canvas.style.height = `${size}px`;
         this.canvas.classList.add("atom-sprite");
         this.updatePaint();
         this.translate();
@@ -18,7 +25,11 @@ export class AtomSprite {
         return this.canvas;
     }
     updatePaint() {
+        this.context.save();
+        this.context.scale(devicePixelRatio, devicePixelRatio);
+        this.context.translate(AtomSprite.PADDING, AtomSprite.PADDING);
         this.atomPainter.paint(this.context, this.atom, this.getConnected(), TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE);
+        this.context.restore();
     }
     moveTo(field) {
         const atom = this.arena.getField(this.x, this.y);
@@ -75,4 +86,5 @@ export class AtomSprite {
         this.canvas.style.transform = `translate(${this.x * TILE_SIZE}px, ${this.y * TILE_SIZE}px)`;
     }
 }
+AtomSprite.PADDING = 8;
 //# sourceMappingURL=sprites.js.map

@@ -3,6 +3,7 @@ import {AtomPainter, TILE_SIZE} from "./painter.js"
 import {Atom, Connector, Map2d, Tile} from "../model/model.js"
 
 export class AtomSprite implements Point {
+    private static PADDING = 8 // for outgoing diagonal connections
     private readonly canvas: HTMLCanvasElement = document.createElement("canvas")
     private readonly context: CanvasRenderingContext2D = this.canvas.getContext("2d")
 
@@ -11,6 +12,13 @@ export class AtomSprite implements Point {
                 public readonly atom: Atom,
                 public x: number,
                 public y: number) {
+        this.canvas.style.top = `${-AtomSprite.PADDING}px`
+        this.canvas.style.left = `${-AtomSprite.PADDING}px`
+        const size = TILE_SIZE + AtomSprite.PADDING * 2
+        this.canvas.width = size * devicePixelRatio
+        this.canvas.height = size * devicePixelRatio
+        this.canvas.style.width = `${size}px`
+        this.canvas.style.height = `${size}px`
         this.canvas.classList.add("atom-sprite")
         this.updatePaint()
         this.translate()
@@ -21,7 +29,11 @@ export class AtomSprite implements Point {
     }
 
     updatePaint(): void {
+        this.context.save()
+        this.context.scale(devicePixelRatio, devicePixelRatio)
+        this.context.translate(AtomSprite.PADDING, AtomSprite.PADDING)
         this.atomPainter.paint(this.context, this.atom, this.getConnected(), TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE)
+        this.context.restore()
     }
 
     moveTo(field: Point) {

@@ -7,7 +7,6 @@ import {SoundManager} from "./atomix/sounds.js"
 
 /**
  * TODO
- * Add padding to atom-canvas for diagonal connections
  * Prevent new inputs while running animations
  * Nice reflection animation when puzzle is solved and maybe a animation on the rainbow game title?
  * Moving duration in respect to distance?
