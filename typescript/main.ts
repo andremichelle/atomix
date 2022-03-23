@@ -9,7 +9,7 @@ import {Hold} from "./lib/common.js"
 /**
  * TODO
  * Proper layout and scaling for different media sizes
- * Countdown for scoring
+ * Count moves in user-interface
  */
 
 const showProgress = (() => {

@@ -231,6 +231,7 @@ export class GameContext implements ControlHost {
         this.backgroundAudioStop.ifPresent(stop => stop())
         this.backgroundAudioStop = Options.None
         await this.startLevel(this.levels[this.levelPointer])
+        this.acceptUserInput = true
     }
 
     private async solve(): Promise<void> {
