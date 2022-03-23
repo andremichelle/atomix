@@ -15,6 +15,7 @@ export interface SoundPlayOptions {
     loop?: boolean;
     fadeInSeconds?: number;
     fadeOutSeconds?: number;
+    volume?: number;
 }
 export declare class SoundManager {
     private readonly context;

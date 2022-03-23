@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { ObservableValueImpl } from "../lib/common.js";
+import { dbToGain } from "../audio/common.js";
 export var Sound;
 (function (Sound) {
     Sound[Sound["BackgroundLoop"] = 0] = "BackgroundLoop";
@@ -48,9 +49,10 @@ export class SoundManager {
         const loop = options === undefined ? false : options.loop === true;
         const fadeInSeconds = options === undefined || options.fadeInSeconds === undefined ? 0.001 : options.fadeInSeconds;
         const fadeOutSeconds = options === undefined || options.fadeOutSeconds === undefined ? 0.1 : options.fadeOutSeconds;
+        const volume = options === undefined || options.volume === undefined ? 0.0 : options.volume;
         const gainNode = this.context.createGain();
         gainNode.gain.value = 0.0;
-        gainNode.gain.linearRampToValueAtTime(1.0, this.context.currentTime + fadeInSeconds);
+        gainNode.gain.linearRampToValueAtTime(dbToGain(volume), this.context.currentTime + fadeInSeconds);
         const bufferSource = this.context.createBufferSource();
         bufferSource.buffer = this.map.get(sound);
         bufferSource.loop = loop;

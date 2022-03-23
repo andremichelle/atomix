@@ -80,6 +80,7 @@ class Clock {
     restart() {
         this.stop();
         this.seconds = this.durationInSeconds;
+        this.clockUpdate(this.seconds);
         this.interval = setInterval(() => {
             if (this.seconds > 0) {
                 this.seconds--;
@@ -253,7 +254,8 @@ export class GameContext {
             this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
                 loop: true,
                 fadeInSeconds: 0.0,
-                fadeOutSeconds: 5.0
+                fadeOutSeconds: 5.0,
+                volume: -6.0
             }));
             ArrayUtils.replace(this.atomSprites, yield this.initAtomSprites(arena));
         });
@@ -307,11 +309,17 @@ export class GameContext {
             this.element.classList.add("disappear");
             yield Hold.forAnimationComplete(this.element);
             this.element.classList.remove("disappear");
-            yield this.startLevel(this.levels[++this.levelPointer]);
-            yield Hold.forEvent(this.labelTitle, "animationiteration");
-            this.labelTitle.classList.remove("animate");
-            this.clock.restart();
-            this.acceptUserInput = true;
+            if (++this.levelPointer === this.levels.length) {
+                console.log("ALL DONE");
+            }
+            else {
+                yield this.startLevel(this.levels[++this.levelPointer]);
+                yield Hold.forEvent(this.labelTitle, "animationiteration");
+                this.labelTitle.classList.remove("animate");
+                this.clock.restart();
+                this.acceptUserInput = true;
+            }
+            yield this.solve();
         });
     }
     resizeTo(width, height) {

@@ -80,6 +80,7 @@ class Clock {
     restart(): void {
         this.stop()
         this.seconds = this.durationInSeconds
+        this.clockUpdate(this.seconds)
         this.interval = setInterval(() => {
             if (this.seconds > 0) {
                 this.seconds--
@@ -254,7 +255,8 @@ export class GameContext implements ControlHost {
         this.backgroundLoopStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
             loop: true,
             fadeInSeconds: 0.0,
-            fadeOutSeconds: 5.0
+            fadeOutSeconds: 5.0,
+            volume: -6.0
         }))
         ArrayUtils.replace(this.atomSprites, await this.initAtomSprites(arena))
     }
@@ -305,11 +307,16 @@ export class GameContext implements ControlHost {
         this.element.classList.add("disappear")
         await Hold.forAnimationComplete(this.element)
         this.element.classList.remove("disappear")
-        await this.startLevel(this.levels[++this.levelPointer])
-        await Hold.forEvent(this.labelTitle, "animationiteration")
-        this.labelTitle.classList.remove("animate")
-        this.clock.restart()
-        this.acceptUserInput = true
+        if (++this.levelPointer === this.levels.length) {
+            console.log("ALL DONE")
+        } else {
+            await this.startLevel(this.levels[++this.levelPointer])
+            await Hold.forEvent(this.labelTitle, "animationiteration")
+            this.labelTitle.classList.remove("animate")
+            this.clock.restart()
+            this.acceptUserInput = true
+        }
+        await this.solve()
     }
 
     private resizeTo(width: number, height: number) {
