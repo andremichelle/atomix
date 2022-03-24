@@ -67,7 +67,7 @@ export class AtomPainter {
             .paintConnectors(context, connector, connected.has(connector), tileSize));
         context.drawImage(this.images[atom.kind], -radius, -radius, radius * 2, radius * 2);
         resolveAtomName(atom.kind).ifPresent(name => {
-            context.fillStyle = "rgba(255, 255, 255, 0.2)";
+            context.fillStyle = "rgba(255, 255, 255, 0.5)";
             context.textAlign = "center";
             context.textBaseline = "middle";
             context.font = `bold ${tileSize * 0.25}px "Inter"`;
