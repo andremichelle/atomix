@@ -36,7 +36,6 @@ export class SoundManager {
             this.register(Sound.ClockRewind, "samples/clock-rewind.wav"),
             this.register(Sound.AtomDispose, "samples/atom-dispose.wav"),
             this.register(Sound.TransitionLevel, "samples/transition-level.wav"),
-            this.register(Sound.GameComplete, "samples/game-complete.wav"),
         ]
     }
 

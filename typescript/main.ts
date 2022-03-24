@@ -1,4 +1,4 @@
-import {Boot, Dependency, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
+import {Boot, Loadable, newAudioContext, preloadImagesOfCssFile} from "./lib/boot.js"
 import {fetchAndTranslateLevels, fetchAndTranslateSolutions} from "./atomix/model/format.js"
 import {GameContext} from "./atomix/game.js"
 import {ArenaPainter, AtomPainter} from "./atomix/display/painter.js"
@@ -22,13 +22,13 @@ const showProgress = (() => {
     boot.registerFont('Inter', 'url(./fonts/Inter/static/Inter-Regular.ttf)')
     boot.registerFont('PressStart2P', 'url(./fonts/Press_Start_2P/PressStart2P-Regular.ttf)')
     boot.registerProcess(preloadImagesOfCssFile("./bin/main.css"))
-    const arenaPainter: Dependency<ArenaPainter> = boot.registerProcess(ArenaPainter.load())
-    const atomPainter: Dependency<AtomPainter> = boot.registerProcess(AtomPainter.load())
-    const levels: Dependency<Level[]> = boot.registerProcess(fetchAndTranslateLevels("./level/original.json",
+    const arenaPainter: Loadable<ArenaPainter> = boot.registerProcess(ArenaPainter.load())
+    const atomPainter: Loadable<AtomPainter> = boot.registerProcess(AtomPainter.load())
+    const levels: Loadable<Level[]> = boot.registerProcess(fetchAndTranslateLevels("./level/original.json",
         await fetchAndTranslateSolutions("./level/original-solutions.json")))
     const context = newAudioContext()
     const soundManager = new SoundManager(context)
-    soundManager.load().forEach(promise => boot.registerProcess(promise))
+    soundManager.load().forEach(loading => boot.registerProcess(loading))
     await boot.waitForCompletion()
     // --- BOOT ENDS ---
 

@@ -28,23 +28,12 @@ export const preloadImagesOfCssFile = async (pathToCss: string): Promise<void> =
     }))).then(() => Promise.resolve())
 }
 
-export interface Dependency<T> {
+export interface Loadable<T> {
     get: () => T
 }
 
 export class Boot implements Observable<Boot> {
     private readonly observable = new ObservableImpl<Boot>()
-    private readonly completion = new Promise<void>((resolve: (value: void) => void) => {
-        this.observable.addObserver(boot => {
-            if (boot.isCompleted()) {
-                requestAnimationFrame(() => {
-                    resolve()
-                    boot.terminate()
-                })
-            }
-        })
-    })
-
     private finishedTasks: number = 0 | 0
     private totalTasks: number = 0 | 0
     private completed: boolean = false
@@ -61,15 +50,17 @@ export class Boot implements Observable<Boot> {
         this.observable.terminate()
     }
 
-    registerFont(name: string, url: string): Dependency<FontFace> {
+    registerFont(name: string, url: string): Loadable<FontFace> {
         return this.registerProcess(document.fonts.ready
             .then((faceSet: FontFaceSet) => new FontFace(name, url)
                 .load()
                 .then(fontFace => faceSet.add(fontFace))))
     }
 
-    registerProcess<T>(promise: Promise<T>): Dependency<T> {
-        console.assert(!this.completed, "Cannot register processes when boot is already completed.")
+    registerProcess<T>(promise: Promise<T>): Loadable<T> {
+        if (this.completed) {
+            console.warn("Cannot register processes when boot is already completed.")
+        }
         this.totalTasks++
         let result = null
         promise.then((value: T) => {
@@ -101,7 +92,16 @@ export class Boot implements Observable<Boot> {
     }
 
     waitForCompletion(): Promise<void> {
-        return this.completion
+        return this.isCompleted() ? Promise.resolve() : new Promise<void>((resolve: (value: void) => void) => {
+            this.observable.addObserver(boot => {
+                if (boot.isCompleted()) {
+                    requestAnimationFrame(() => {
+                        resolve()
+                        boot.terminate()
+                    })
+                }
+            })
+        })
     }
 }
 

@@ -36,16 +36,6 @@ export const preloadImagesOfCssFile = (pathToCss) => __awaiter(void 0, void 0, v
 export class Boot {
     constructor() {
         this.observable = new ObservableImpl();
-        this.completion = new Promise((resolve) => {
-            this.observable.addObserver(boot => {
-                if (boot.isCompleted()) {
-                    requestAnimationFrame(() => {
-                        resolve();
-                        boot.terminate();
-                    });
-                }
-            });
-        });
         this.finishedTasks = 0 | 0;
         this.totalTasks = 0 | 0;
         this.completed = false;
@@ -66,7 +56,9 @@ export class Boot {
             .then(fontFace => faceSet.add(fontFace))));
     }
     registerProcess(promise) {
-        console.assert(!this.completed, "Cannot register processes when boot is already completed.");
+        if (this.completed) {
+            console.warn("Cannot register processes when boot is already completed.");
+        }
         this.totalTasks++;
         let result = null;
         promise.then((value) => {
@@ -95,7 +87,16 @@ export class Boot {
         return Math.round(this.normalizedPercentage() * 100.0);
     }
     waitForCompletion() {
-        return this.completion;
+        return this.isCompleted() ? Promise.resolve() : new Promise((resolve) => {
+            this.observable.addObserver(boot => {
+                if (boot.isCompleted()) {
+                    requestAnimationFrame(() => {
+                        resolve();
+                        boot.terminate();
+                    });
+                }
+            });
+        });
     }
 }
 export const newAudioContext = (options = {

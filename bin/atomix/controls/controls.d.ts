@@ -21,3 +21,14 @@ export declare class MoveOperation {
     execute(): Promise<void>;
     revert(): Promise<void>;
 }
+export declare class Clock {
+    private readonly durationInSeconds;
+    private readonly clockUpdate;
+    private readonly clockComplete;
+    private interval;
+    private seconds;
+    constructor(durationInSeconds: number, clockUpdate: (seconds: number) => void, clockComplete: () => void);
+    restart(): void;
+    stop(): void;
+    rewind(addScore: (() => void)): Promise<void>;
+}

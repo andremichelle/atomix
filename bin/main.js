@@ -31,7 +31,7 @@ const showProgress = (() => {
     const levels = boot.registerProcess(fetchAndTranslateLevels("./level/original.json", yield fetchAndTranslateSolutions("./level/original-solutions.json")));
     const context = newAudioContext();
     const soundManager = new SoundManager(context);
-    soundManager.load().forEach(promise => boot.registerProcess(promise));
+    soundManager.load().forEach(loading => boot.registerProcess(loading));
     yield boot.waitForCompletion();
     const layerElement = document.querySelector("div.play-field div.layers");
     const game = new GameContext(layerElement, soundManager, arenaPainter.get(), atomPainter.get(), levels.get());
