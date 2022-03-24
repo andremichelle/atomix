@@ -24,8 +24,8 @@ const showProgress = (() => {
     boot.registerProcess(preloadImagesOfCssFile("./bin/main.css"))
     const arenaPainter: Dependency<ArenaPainter> = boot.registerProcess(ArenaPainter.load())
     const atomPainter: Dependency<AtomPainter> = boot.registerProcess(AtomPainter.load())
-    const levels: Dependency<Level[]> = boot.registerProcess(fetchAndTranslateLevels("../level/original.json",
-        await fetchAndTranslateSolutions("../level/original-solutions.json")))
+    const levels: Dependency<Level[]> = boot.registerProcess(fetchAndTranslateLevels("./level/original.json",
+        await fetchAndTranslateSolutions("./level/original-solutions.json")))
     const context = newAudioContext()
     const soundManager = new SoundManager(context)
     soundManager.load().forEach(promise => boot.registerProcess(promise))
