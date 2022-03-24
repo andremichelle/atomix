@@ -23,6 +23,7 @@ export declare class GameContext implements ControlHost {
     private readonly history;
     private readonly labelTitle;
     private readonly labelScore;
+    private readonly labelCountMoves;
     private readonly labelLevelId;
     private readonly labelLevelName;
     private readonly labelLevelTime;
@@ -34,6 +35,7 @@ export declare class GameContext implements ControlHost {
     private level;
     private levelPointer;
     private score;
+    private moveCount;
     acceptUserInput: boolean;
     constructor(element: HTMLElement, soundManager: SoundManager, arenaPainter: ArenaPainter, atomPainter: AtomPainter, levels: Level[]);
     start(): Promise<void>;

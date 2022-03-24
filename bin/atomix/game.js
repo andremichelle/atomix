@@ -88,6 +88,7 @@ class Clock {
             }
             else {
                 this.clockComplete();
+                this.stop();
             }
         }, 1000);
     }
@@ -121,6 +122,7 @@ export class GameContext {
         this.history = [];
         this.labelTitle = document.getElementById("title");
         this.labelScore = document.getElementById("score");
+        this.labelCountMoves = document.getElementById("count-moves");
         this.labelLevelId = document.getElementById("level-id");
         this.labelLevelName = document.getElementById("level-name");
         this.labelLevelTime = document.getElementById("level-time");
@@ -136,6 +138,7 @@ export class GameContext {
         this.level = Options.None;
         this.levelPointer = 0;
         this.score = 0;
+        this.moveCount = 0;
         this.acceptUserInput = false;
         document.getElementById("undo-button").addEventListener("click", () => this.undo());
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
@@ -230,6 +233,7 @@ export class GameContext {
             this.backgroundAudioStop.ifPresent(stop => stop());
             this.backgroundAudioStop = Options.None;
             yield this.startLevel(this.levels[this.levelPointer]);
+            this.acceptUserInput = true;
         });
     }
     solve() {
@@ -255,21 +259,22 @@ export class GameContext {
             level = level.clone();
             this.level = Options.valueOf(level);
             this.historyPointer = 0;
+            this.labelCountMoves.textContent = `${this.moveCount = 0}`.padStart(2, "0");
             ArrayUtils.clear(this.history);
-            this.labelLevelId.textContent = level.id.padStart(2, "0");
-            this.labelLevelName.textContent = level.name;
             this.atomsLayer.removeAllSprites();
             const arena = level.arena;
             this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE);
             this.arenaCanvas.paint(arena);
-            this.renderMoleculePreview(level.molecule);
             this.element.classList.add("appear");
             yield Hold.forAnimationComplete(this.element);
+            this.element.classList.remove("appear");
             this.transitionSoundStop.ifPresent(stop => stop());
             this.transitionSoundStop = Options.None;
+            this.labelLevelId.textContent = level.id.padStart(2, "0");
+            this.labelLevelName.textContent = level.name;
+            this.renderMoleculePreview(level.molecule);
             this.soundManager.play(Sound.LevelDocked);
-            this.element.classList.remove("appear");
-            yield Hold.forFrames(40);
+            yield Hold.forFrames(30);
             this.backgroundAudioStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
                 loop: true,
                 fadeInSeconds: 1.0,
@@ -291,6 +296,7 @@ export class GameContext {
             this.history.splice(this.historyPointer, this.history.length - this.historyPointer);
             const moveOperation = new MoveOperation(this.soundManager, atomSprite, fromX, fromY, toX, toY);
             yield moveOperation.execute();
+            this.labelCountMoves.textContent = `${++this.moveCount}`.padStart(2, "0");
             this.history.push(moveOperation);
             this.historyPointer = this.history.length;
             this.atomSprites.forEach(atomSprite => atomSprite.updatePaint());
@@ -374,6 +380,7 @@ export class GameContext {
         canvas.height = height * devicePixelRatio;
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
+        canvas.classList.remove("hidden");
         context.save();
         context.scale(devicePixelRatio, devicePixelRatio);
         molecule.iterateFields((maybeAtom, x, y) => {

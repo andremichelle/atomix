@@ -177,6 +177,8 @@ main div.info {
   align-items: center;
   justify-content: center;
   border-radius: 0 0 0.25vw 0;
+  background-image: url("../assets/background.jpg");
+  background-attachment: fixed;
 }
 main div.info section {
   display: flex;
@@ -201,6 +203,8 @@ main div.play-field {
   position: relative;
   align-items: center;
   justify-content: center;
+  background-image: url("../assets/background.jpg");
+  background-attachment: fixed;
 }
 main div.play-field button.play-button {
   top: 50%;
@@ -270,6 +274,8 @@ main div.preview {
   background-color: #1C1C1C;
   height: 100%;
   border-radius: 0 0.25vw 0 0;
+  background-image: url("../assets/background.jpg");
+  background-attachment: fixed;
 }
 main div.action-buttons {
   top: 2vmin;

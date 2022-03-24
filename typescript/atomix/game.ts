@@ -117,6 +117,7 @@ export class GameContext implements ControlHost {
 
     private readonly labelTitle: HTMLElement = document.getElementById("title")
     private readonly labelScore: HTMLElement = document.getElementById("score")
+    private readonly labelCountMoves: HTMLElement = document.getElementById("count-moves")
     private readonly labelLevelId: HTMLElement = document.getElementById("level-id")
     private readonly labelLevelName: HTMLElement = document.getElementById("level-name")
     private readonly labelLevelTime: HTMLElement = document.getElementById("level-time")
@@ -139,6 +140,7 @@ export class GameContext implements ControlHost {
     private levelPointer = 0
 
     private score = 0
+    private moveCount = 0
 
     acceptUserInput: boolean = false
 
@@ -254,21 +256,22 @@ export class GameContext implements ControlHost {
         level = level.clone()
         this.level = Options.valueOf(level)
         this.historyPointer = 0
+        this.labelCountMoves.textContent = `${this.moveCount = 0}`.padStart(2, "0")
         ArrayUtils.clear(this.history)
-        this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
-        this.labelLevelName.textContent = level.name
         this.atomsLayer.removeAllSprites()
         const arena: Map2d = level.arena
         this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
         this.arenaCanvas.paint(arena)
-        this.renderMoleculePreview(level.molecule)
         this.element.classList.add("appear")
         await Hold.forAnimationComplete(this.element)
+        this.element.classList.remove("appear")
         this.transitionSoundStop.ifPresent(stop => stop())
         this.transitionSoundStop = Options.None
+        this.labelLevelId.textContent = (<string>level.id).padStart(2, "0")
+        this.labelLevelName.textContent = level.name
+        this.renderMoleculePreview(level.molecule)
         this.soundManager.play(Sound.LevelDocked)
-        this.element.classList.remove("appear")
-        await Hold.forFrames(40)
+        await Hold.forFrames(30)
         this.backgroundAudioStop = Options.valueOf(this.soundManager.play(Sound.BackgroundLoop, {
             loop: true,
             fadeInSeconds: 1.0,
@@ -288,6 +291,7 @@ export class GameContext implements ControlHost {
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         const moveOperation = new MoveOperation(this.soundManager, atomSprite, fromX, fromY, toX, toY)
         await moveOperation.execute()
+        this.labelCountMoves.textContent = `${++this.moveCount}`.padStart(2, "0")
         this.history.push(moveOperation)
         this.historyPointer = this.history.length
         this.atomSprites.forEach(atomSprite => atomSprite.updatePaint())
@@ -370,6 +374,7 @@ export class GameContext implements ControlHost {
         canvas.height = height * devicePixelRatio
         canvas.style.width = `${width}px`
         canvas.style.height = `${height}px`
+        canvas.classList.remove("hidden")
         context.save()
         context.scale(devicePixelRatio, devicePixelRatio)
         molecule.iterateFields((maybeAtom, x, y) => {

@@ -9,7 +9,8 @@ import {Hold} from "./lib/common.js"
 /**
  * TODO
  * Proper layout and scaling for different media sizes
- * Count moves in user-interface
+ * Mouse control
+ * Fav-Icon
  */
 
 const showProgress = (() => {
