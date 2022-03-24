@@ -74,7 +74,7 @@ svg.preloader > circle.progress {
 }
 @keyframes shake-level-top {
   0% {
-    top: -0.2vw;
+    top: -0.1vw;
   }
   100% {
     top: 0;
@@ -82,7 +82,7 @@ svg.preloader > circle.progress {
 }
 @keyframes shake-level-left {
   0% {
-    left: -0.2vw;
+    left: -0.1vw;
   }
   100% {
     left: 0;
@@ -90,7 +90,7 @@ svg.preloader > circle.progress {
 }
 @keyframes shake-level-right {
   0% {
-    right: -0.2vw;
+    right: -0.1vw;
   }
   100% {
     right: 0;
@@ -98,7 +98,7 @@ svg.preloader > circle.progress {
 }
 @keyframes shake-level-bottom {
   0% {
-    bottom: -0.2vw;
+    bottom: -0.1vw;
   }
   100% {
     bottom: 0;
@@ -243,6 +243,7 @@ main div.play-field {
   position: relative;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 @media (orientation: landscape) {
   main div.play-field {
