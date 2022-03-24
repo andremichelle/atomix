@@ -6,12 +6,6 @@ import {Level} from "./atomix/model/model.js"
 import {SoundManager} from "./atomix/sounds.js"
 import {Hold} from "./lib/common.js"
 
-/**
- * TODO
- * Mouse control
- * Fav-Icon
- */
-
 const showProgress = (() => {
         const progress: SVGSVGElement = document.querySelector("svg.preloader")
         window.onerror = () => progress.classList.add("error")
