@@ -58,9 +58,6 @@ export class Boot implements Observable<Boot> {
     }
 
     registerProcess<T>(promise: Promise<T>): Loadable<T> {
-        if (this.completed) {
-            console.warn("Cannot register processes when boot is already completed.")
-        }
         this.totalTasks++
         let result = null
         promise.then((value: T) => {
