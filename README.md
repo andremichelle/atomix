@@ -10,7 +10,7 @@ This project was a finger exercise to get acquainted with css transitions & anim
 
 Based on [webware template](https://github.com/andremichelle/webware/)
 
-Tested on Chrome, Firefox, Safari, Macbook Pro, iPad Pro
+Tested on Chrome, Firefox, Safari, Macbook Pro, iPad Pro, iPhone 11
 
 # TODO
 A nice ending screen for those who cracked all 30 puzzles.
