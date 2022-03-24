@@ -1,8 +1,17 @@
 import {Atom, Connector, Level, Map2d} from "./model/model.js"
 import {ControlHost, MoveOperation} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
-import {ArrayUtils, Direction, Hold, Option, Options, Point} from "../lib/common.js"
-import {ArenaPainter, AtomPainter, TILE_SIZE} from "./display/painter.js"
+import {
+    ArrayUtils,
+    Direction,
+    Hold,
+    ObservableValue,
+    ObservableValueImpl,
+    Option,
+    Options,
+    Point
+} from "../lib/common.js"
+import {ArenaPainter, AtomPainter} from "./display/painter.js"
 import {Sound, SoundManager} from "./sounds.js"
 import {AtomSprite} from "./display/sprites.js"
 
@@ -29,10 +38,10 @@ class ArenaCanvas {
         this.canvas.height = height * devicePixelRatio
     }
 
-    paint(arena: Map2d): void {
+    paint(arena: Map2d, tileSize: number): void {
         this.context.save()
         this.context.scale(devicePixelRatio, devicePixelRatio)
-        this.arenaPainter.paint(this.context, arena, TILE_SIZE)
+        this.arenaPainter.paint(this.context, arena, tileSize)
         this.context.restore()
     }
 }
@@ -51,18 +60,18 @@ export class AtomsLayer {
         }
     }
 
-    showMovePreview(source: Point, target: Point): () => void {
+    showMovePreview(source: Point, target: Point, tileSize: number): () => void {
         const div = document.createElement("div")
         div.classList.add("move-preview")
         const y0 = Math.min(source.y, target.y) + 0.4
         const y1 = Math.max(source.y, target.y) + 0.6
         const x0 = Math.min(source.x, target.x) + 0.4
         const x1 = Math.max(source.x, target.x) + 0.6
-        div.style.top = `${y0 * TILE_SIZE}px`
-        div.style.left = `${x0 * TILE_SIZE}px`
-        div.style.width = `${(x1 - x0) * TILE_SIZE}px`
-        div.style.height = `${(y1 - y0) * TILE_SIZE}px`
-        div.style.borderRadius = `${TILE_SIZE * 0.2}px`
+        div.style.top = `${y0 * tileSize}px`
+        div.style.left = `${x0 * tileSize}px`
+        div.style.width = `${(x1 - x0) * tileSize}px`
+        div.style.height = `${(y1 - y0) * tileSize}px`
+        div.style.borderRadius = `${tileSize * 0.2}px`
         this.element.prepend(div)
         return () => div.remove()
     }
@@ -122,6 +131,8 @@ export class GameContext implements ControlHost {
     private readonly labelLevelName: HTMLElement = document.getElementById("level-name")
     private readonly labelLevelTime: HTMLElement = document.getElementById("level-time")
 
+    private readonly tileSizeValue: ObservableValue<number> = new ObservableValueImpl<number>(64)
+
     private readonly clock: Clock = new Clock(
         3 * 60,
         (seconds: number) => {
@@ -152,6 +163,10 @@ export class GameContext implements ControlHost {
         document.getElementById("undo-button").addEventListener("click", () => this.undo())
         document.getElementById("redo-button").addEventListener("click", () => this.redo())
         document.getElementById("reset-button").addEventListener("click", () => this.reset())
+        window.addEventListener("resize", () => {
+            this.level.ifPresent(level => this.paintLevel(level))
+            this.atomSprites.forEach(atomSprite => atomSprite.updatePaint())
+        })
         this.labelTitle.addEventListener("touchstart", async (event: TouchEvent) => {
             if (!this.acceptUserInput) return
             if (event.targetTouches.length > 1) {
@@ -176,11 +191,12 @@ export class GameContext implements ControlHost {
     nearestAtomSprite(x: number, y: number): AtomSprite | null {
         let nearestDistance: number = Number.MAX_VALUE
         let nearestMovableAtom: AtomSprite = null
+        const tileSize = this.tileSizeValue.get()
         this.atomSprites.forEach((atomSprite: AtomSprite) => {
-            const dx = x - (atomSprite.x + 0.5) * TILE_SIZE
-            const dy = y - (atomSprite.y + 0.5) * TILE_SIZE
+            const dx = x - (atomSprite.x + 0.5) * tileSize
+            const dy = y - (atomSprite.y + 0.5) * tileSize
             const distance = Math.sqrt(dx * dx + dy * dy)
-            if (distance > TILE_SIZE) return
+            if (distance > tileSize) return
             if (nearestDistance > distance) {
                 nearestDistance = distance
                 nearestMovableAtom = atomSprite
@@ -193,7 +209,8 @@ export class GameContext implements ControlHost {
         if (!this.acceptUserInput) return
         this.movePreview.ifPresent(preview => preview.hidePreview())
         this.movePreview = Options.valueOf(
-            new MovePreview(atomSprite, direction, this.atomsLayer.showMovePreview(atomSprite, atomSprite.predictMove(direction))))
+            new MovePreview(atomSprite, direction,
+                this.atomsLayer.showMovePreview(atomSprite, atomSprite.predictMove(direction), this.tileSizeValue.get())))
     }
 
     async hidePreviewMove(commit: boolean) {
@@ -209,7 +226,7 @@ export class GameContext implements ControlHost {
     }
 
     tileSize(): number {
-        return TILE_SIZE
+        return this.tileSizeValue.get()
     }
 
     private async undo(): Promise<void> {
@@ -260,8 +277,7 @@ export class GameContext implements ControlHost {
         ArrayUtils.clear(this.history)
         this.atomsLayer.removeAllSprites()
         const arena: Map2d = level.arena
-        this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE)
-        this.arenaCanvas.paint(arena)
+        this.paintLevel(level)
         this.element.classList.add("appear")
         await Hold.forAnimationComplete(this.element)
         this.element.classList.remove("appear")
@@ -291,6 +307,9 @@ export class GameContext implements ControlHost {
         this.history.splice(this.historyPointer, this.history.length - this.historyPointer)
         const moveOperation = new MoveOperation(this.soundManager, atomSprite, fromX, fromY, toX, toY)
         await moveOperation.execute()
+        const shakeClassName = GameContext.resolveShakeClassName(direction)
+        this.element.classList.add(shakeClassName)
+        Hold.forAnimationComplete(this.element).then(() => this.element.classList.remove(shakeClassName))
         this.labelCountMoves.textContent = `${++this.moveCount}`.padStart(2, "0")
         this.history.push(moveOperation)
         this.historyPointer = this.history.length
@@ -326,6 +345,7 @@ export class GameContext implements ControlHost {
         this.element.classList.remove("disappear")
         if (++this.levelPointer === this.levels.length) {
             console.log("ALL DONE")
+            // TODO
             return
         } else {
             await this.startLevel(this.levels[this.levelPointer])
@@ -334,13 +354,26 @@ export class GameContext implements ControlHost {
             this.clock.restart()
             this.acceptUserInput = true
         }
-        // await this.solve()
     }
 
-    private resizeTo(width: number, height: number) {
+    private paintLevel(level: Level): void {
+        const arena = level.arena
+        const padding = 64
+        const parentElement = this.element.parentElement
+
+        this.element.style.width = `initial`
+        this.element.style.height = `initial`
+        this.tileSizeValue.set(Math.min(Math.min(48,
+            Math.floor((parentElement.clientWidth - padding) / arena.numColumns()),
+            Math.floor((parentElement.clientHeight - padding) / arena.numRows()))
+        ))
+        const tileSize = this.tileSizeValue.get()
+        const width = arena.numColumns() * tileSize
+        const height = arena.numRows() * tileSize
         this.arenaCanvas.resizeTo(width, height)
         this.element.style.width = `${width}px`
         this.element.style.height = `${height}px`
+        this.arenaCanvas.paint(arena, tileSize)
     }
 
     private async initAtomSprites(arena: Map2d): Promise<AtomSprite[]> {
@@ -348,7 +381,7 @@ export class GameContext implements ControlHost {
         let count = 0
         arena.iterateFields(async (maybeAtom, x, y) => {
             if (maybeAtom instanceof Atom) {
-                const atomSprite = new AtomSprite(this.atomPainter, arena, maybeAtom, x, y)
+                const atomSprite = new AtomSprite(this.atomPainter, this.tileSizeValue, arena, maybeAtom, x, y)
                 atomSprites.push(atomSprite)
                 count++
             }
@@ -392,5 +425,18 @@ export class GameContext implements ControlHost {
             if (a.y < b.y) return -1
             return a.x - b.x
         })
+    }
+
+    private static resolveShakeClassName(direction: Direction): string {
+        switch (direction) {
+            case Direction.Up:
+                return "shake-top"
+            case Direction.Left:
+                return "shake-left"
+            case Direction.Right:
+                return "shake-right"
+            case Direction.Down:
+                return "shake-bottom"
+        }
     }
 }

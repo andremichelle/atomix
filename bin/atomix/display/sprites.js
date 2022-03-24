@@ -1,35 +1,36 @@
 import { Direction, Hold } from "../../lib/common.js";
-import { TILE_SIZE } from "./painter.js";
 import { Atom, Tile } from "../model/model.js";
 export class AtomSprite {
-    constructor(atomPainter, arena, atom, x, y) {
+    constructor(atomPainter, tileSizeValue, arena, atom, x, y) {
         this.atomPainter = atomPainter;
+        this.tileSizeValue = tileSizeValue;
         this.arena = arena;
         this.atom = atom;
         this.x = x;
         this.y = y;
         this.canvas = document.createElement("canvas");
         this.context = this.canvas.getContext("2d");
-        this.canvas.style.top = `${-AtomSprite.PADDING}px`;
-        this.canvas.style.left = `${-AtomSprite.PADDING}px`;
-        const size = TILE_SIZE + AtomSprite.PADDING * 2;
-        this.canvas.width = size * devicePixelRatio;
-        this.canvas.height = size * devicePixelRatio;
-        this.canvas.style.width = `${size}px`;
-        this.canvas.style.height = `${size}px`;
-        this.canvas.classList.add("atom-sprite");
         this.updatePaint();
-        this.translate();
     }
     element() {
         return this.canvas;
     }
     updatePaint() {
+        this.canvas.style.top = `${-AtomSprite.PADDING}px`;
+        this.canvas.style.left = `${-AtomSprite.PADDING}px`;
+        const tileSize = this.tileSizeValue.get();
+        const screenSize = tileSize + AtomSprite.PADDING * 2.0;
+        this.canvas.width = screenSize * devicePixelRatio;
+        this.canvas.height = screenSize * devicePixelRatio;
+        this.canvas.style.width = `${screenSize}px`;
+        this.canvas.style.height = `${screenSize}px`;
+        this.canvas.classList.add("atom-sprite");
         this.context.save();
         this.context.scale(devicePixelRatio, devicePixelRatio);
         this.context.translate(AtomSprite.PADDING, AtomSprite.PADDING);
-        this.atomPainter.paint(this.context, this.atom, this.getConnected(), TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE);
+        this.atomPainter.paint(this.context, this.atom, this.getConnected(), tileSize * 0.5, tileSize * 0.5, tileSize);
         this.context.restore();
+        this.translate();
     }
     mapMoveDuration(distance) {
         const minDistance = 1;
@@ -92,7 +93,8 @@ export class AtomSprite {
         return set;
     }
     translate() {
-        this.canvas.style.transform = `translate(${this.x * TILE_SIZE}px, ${this.y * TILE_SIZE}px)`;
+        const tileSize = this.tileSizeValue.get();
+        this.canvas.style.transform = `translate(${this.x * tileSize}px, ${this.y * tileSize}px)`;
     }
 }
 AtomSprite.PADDING = 8;

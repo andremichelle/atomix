@@ -1,5 +1,5 @@
-import {Direction, Hold, Point} from "../../lib/common.js"
-import {AtomPainter, TILE_SIZE} from "./painter.js"
+import {Direction, Hold, Point, Value} from "../../lib/common.js"
+import {AtomPainter} from "./painter.js"
 import {Atom, Connector, Map2d, Tile} from "../model/model.js"
 
 export class AtomSprite implements Point {
@@ -8,20 +8,12 @@ export class AtomSprite implements Point {
     private readonly context: CanvasRenderingContext2D = this.canvas.getContext("2d")
 
     constructor(private readonly atomPainter: AtomPainter,
+                private readonly tileSizeValue: Value<number>,
                 private readonly arena: Map2d,
                 public readonly atom: Atom,
                 public x: number,
                 public y: number) {
-        this.canvas.style.top = `${-AtomSprite.PADDING}px`
-        this.canvas.style.left = `${-AtomSprite.PADDING}px`
-        const size = TILE_SIZE + AtomSprite.PADDING * 2
-        this.canvas.width = size * devicePixelRatio
-        this.canvas.height = size * devicePixelRatio
-        this.canvas.style.width = `${size}px`
-        this.canvas.style.height = `${size}px`
-        this.canvas.classList.add("atom-sprite")
         this.updatePaint()
-        this.translate()
     }
 
     element(): HTMLElement {
@@ -29,11 +21,21 @@ export class AtomSprite implements Point {
     }
 
     updatePaint(): void {
+        this.canvas.style.top = `${-AtomSprite.PADDING}px`
+        this.canvas.style.left = `${-AtomSprite.PADDING}px`
+        const tileSize = this.tileSizeValue.get()
+        const screenSize = tileSize + AtomSprite.PADDING * 2.0
+        this.canvas.width = screenSize * devicePixelRatio
+        this.canvas.height = screenSize * devicePixelRatio
+        this.canvas.style.width = `${screenSize}px`
+        this.canvas.style.height = `${screenSize}px`
+        this.canvas.classList.add("atom-sprite")
         this.context.save()
         this.context.scale(devicePixelRatio, devicePixelRatio)
         this.context.translate(AtomSprite.PADDING, AtomSprite.PADDING)
-        this.atomPainter.paint(this.context, this.atom, this.getConnected(), TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE)
+        this.atomPainter.paint(this.context, this.atom, this.getConnected(), tileSize * 0.5, tileSize * 0.5, tileSize)
         this.context.restore()
+        this.translate()
     }
 
     mapMoveDuration(distance: number): void {
@@ -98,6 +100,7 @@ export class AtomSprite implements Point {
     }
 
     private translate() {
-        this.canvas.style.transform = `translate(${this.x * TILE_SIZE}px, ${this.y * TILE_SIZE}px)`
+        const tileSize: number = this.tileSizeValue.get()
+        this.canvas.style.transform = `translate(${this.x * tileSize}px, ${this.y * tileSize}px)`
     }
 }

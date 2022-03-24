@@ -1,5 +1,4 @@
 import { Atom, Connector, Map2d } from "../model/model.js";
-export declare const TILE_SIZE = 48;
 export declare class ArenaPainter {
     private readonly floors;
     private readonly walls;

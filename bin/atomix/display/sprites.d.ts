@@ -1,8 +1,9 @@
-import { Direction, Point } from "../../lib/common.js";
+import { Direction, Point, Value } from "../../lib/common.js";
 import { AtomPainter } from "./painter.js";
 import { Atom, Map2d } from "../model/model.js";
 export declare class AtomSprite implements Point {
     private readonly atomPainter;
+    private readonly tileSizeValue;
     private readonly arena;
     readonly atom: Atom;
     x: number;
@@ -10,7 +11,7 @@ export declare class AtomSprite implements Point {
     private static PADDING;
     private readonly canvas;
     private readonly context;
-    constructor(atomPainter: AtomPainter, arena: Map2d, atom: Atom, x: number, y: number);
+    constructor(atomPainter: AtomPainter, tileSizeValue: Value<number>, arena: Map2d, atom: Atom, x: number, y: number);
     element(): HTMLElement;
     updatePaint(): void;
     mapMoveDuration(distance: number): void;

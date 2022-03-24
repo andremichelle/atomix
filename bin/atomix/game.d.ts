@@ -9,7 +9,7 @@ export declare class AtomsLayer {
     constructor(element: HTMLElement);
     addSprite(atomSprite: AtomSprite): void;
     removeAllSprites(): void;
-    showMovePreview(source: Point, target: Point): () => void;
+    showMovePreview(source: Point, target: Point, tileSize: number): () => void;
 }
 export declare class GameContext implements ControlHost {
     private readonly element;
@@ -27,6 +27,7 @@ export declare class GameContext implements ControlHost {
     private readonly labelLevelId;
     private readonly labelLevelName;
     private readonly labelLevelTime;
+    private readonly tileSizeValue;
     private readonly clock;
     private backgroundAudioStop;
     private transitionSoundStop;
@@ -51,8 +52,9 @@ export declare class GameContext implements ControlHost {
     private startLevel;
     private executeMove;
     private showSolvedAnimation;
-    private resizeTo;
+    private paintLevel;
     private initAtomSprites;
     private renderMoleculePreview;
     private static sortAtomSprites;
+    private static resolveShakeClassName;
 }

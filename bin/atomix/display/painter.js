@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { resolveAtomName, Tile } from "../model/model.js";
 import { loadImageBitmaps } from "../../lib/common.js";
 import { Mulberry32 } from "../../lib/math.js";
-export const TILE_SIZE = 48;
 export class ArenaPainter {
     constructor(floors, walls) {
         this.floors = floors;

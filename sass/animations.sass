@@ -1,12 +1,42 @@
 @keyframes wobbling
   0%
-    transform: translate(-50%, -50%) rotate(-2deg)
+    transform: translate(-50%, -50%) rotate(-1deg)
 
   50%
-    transform: translate(-50%, -50%) rotate(0deg) scale(1.1)
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.02)
 
   100%
-    transform: translate(-50%, -50%) rotate(2deg)
+    transform: translate(-50%, -50%) rotate(1deg)
+
+$bounce: -0.2vw
+
+@keyframes shake-level-top
+  0%
+    top: $bounce
+
+  100%
+    top: 0
+
+@keyframes shake-level-left
+  0%
+    left: $bounce
+
+  100%
+    left: 0
+
+@keyframes shake-level-right
+  0%
+    right: $bounce
+
+  100%
+    right: 0
+
+@keyframes shake-level-bottom
+  0%
+    bottom: $bounce
+
+  100%
+    bottom: 0
 
 @keyframes level-appear
   0%

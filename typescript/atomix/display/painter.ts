@@ -2,8 +2,6 @@ import {Atom, Connector, Map2d, resolveAtomName, Tile} from "../model/model.js"
 import {loadImageBitmaps} from "../../lib/common.js"
 import {Mulberry32, Random} from "../../lib/math.js"
 
-export const TILE_SIZE = 48
-
 export class ArenaPainter {
     static async load(): Promise<ArenaPainter> {
         const floors: ImageBitmap[] = await loadImageBitmaps(index => `./assets/floor${index}.jpg`, 2)
@@ -83,7 +81,7 @@ export class AtomPainter {
             const min = offset - bondThickness * 0.5
             const max = offset + bondThickness * 0.5
             const gradient = context.createLinearGradient(-min * ny, min * nx, -max * ny, max * nx)
-            if(connected) {
+            if (connected) {
                 gradient.addColorStop(0.0, "#777")
                 gradient.addColorStop(0.5, "#BBB")
                 gradient.addColorStop(1.0, "#777")

@@ -10,8 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { Atom } from "./model/model.js";
 import { MoveOperation } from "./controls/controls.js";
 import { TouchControl } from "./controls/touch.js";
-import { ArrayUtils, Hold, Options } from "../lib/common.js";
-import { TILE_SIZE } from "./display/painter.js";
+import { ArrayUtils, Direction, Hold, ObservableValueImpl, Options } from "../lib/common.js";
 import { Sound } from "./sounds.js";
 import { AtomSprite } from "./display/sprites.js";
 class MovePreview {
@@ -34,10 +33,10 @@ class ArenaCanvas {
         this.canvas.width = width * devicePixelRatio;
         this.canvas.height = height * devicePixelRatio;
     }
-    paint(arena) {
+    paint(arena, tileSize) {
         this.context.save();
         this.context.scale(devicePixelRatio, devicePixelRatio);
-        this.arenaPainter.paint(this.context, arena, TILE_SIZE);
+        this.arenaPainter.paint(this.context, arena, tileSize);
         this.context.restore();
     }
 }
@@ -53,18 +52,18 @@ export class AtomsLayer {
             this.element.lastChild.remove();
         }
     }
-    showMovePreview(source, target) {
+    showMovePreview(source, target, tileSize) {
         const div = document.createElement("div");
         div.classList.add("move-preview");
         const y0 = Math.min(source.y, target.y) + 0.4;
         const y1 = Math.max(source.y, target.y) + 0.6;
         const x0 = Math.min(source.x, target.x) + 0.4;
         const x1 = Math.max(source.x, target.x) + 0.6;
-        div.style.top = `${y0 * TILE_SIZE}px`;
-        div.style.left = `${x0 * TILE_SIZE}px`;
-        div.style.width = `${(x1 - x0) * TILE_SIZE}px`;
-        div.style.height = `${(y1 - y0) * TILE_SIZE}px`;
-        div.style.borderRadius = `${TILE_SIZE * 0.2}px`;
+        div.style.top = `${y0 * tileSize}px`;
+        div.style.left = `${x0 * tileSize}px`;
+        div.style.width = `${(x1 - x0) * tileSize}px`;
+        div.style.height = `${(y1 - y0) * tileSize}px`;
+        div.style.borderRadius = `${tileSize * 0.2}px`;
         this.element.prepend(div);
         return () => div.remove();
     }
@@ -126,6 +125,7 @@ export class GameContext {
         this.labelLevelId = document.getElementById("level-id");
         this.labelLevelName = document.getElementById("level-name");
         this.labelLevelTime = document.getElementById("level-time");
+        this.tileSizeValue = new ObservableValueImpl(64);
         this.clock = new Clock(3 * 60, (seconds) => {
             const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
             const ss = (seconds % 60).toString().padStart(2, "0");
@@ -143,6 +143,10 @@ export class GameContext {
         document.getElementById("undo-button").addEventListener("click", () => this.undo());
         document.getElementById("redo-button").addEventListener("click", () => this.redo());
         document.getElementById("reset-button").addEventListener("click", () => this.reset());
+        window.addEventListener("resize", () => {
+            this.level.ifPresent(level => this.paintLevel(level));
+            this.atomSprites.forEach(atomSprite => atomSprite.updatePaint());
+        });
         this.labelTitle.addEventListener("touchstart", (event) => __awaiter(this, void 0, void 0, function* () {
             if (!this.acceptUserInput)
                 return;
@@ -167,11 +171,12 @@ export class GameContext {
     nearestAtomSprite(x, y) {
         let nearestDistance = Number.MAX_VALUE;
         let nearestMovableAtom = null;
+        const tileSize = this.tileSizeValue.get();
         this.atomSprites.forEach((atomSprite) => {
-            const dx = x - (atomSprite.x + 0.5) * TILE_SIZE;
-            const dy = y - (atomSprite.y + 0.5) * TILE_SIZE;
+            const dx = x - (atomSprite.x + 0.5) * tileSize;
+            const dy = y - (atomSprite.y + 0.5) * tileSize;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance > TILE_SIZE)
+            if (distance > tileSize)
                 return;
             if (nearestDistance > distance) {
                 nearestDistance = distance;
@@ -184,7 +189,7 @@ export class GameContext {
         if (!this.acceptUserInput)
             return;
         this.movePreview.ifPresent(preview => preview.hidePreview());
-        this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction, this.atomsLayer.showMovePreview(atomSprite, atomSprite.predictMove(direction))));
+        this.movePreview = Options.valueOf(new MovePreview(atomSprite, direction, this.atomsLayer.showMovePreview(atomSprite, atomSprite.predictMove(direction), this.tileSizeValue.get())));
     }
     hidePreviewMove(commit) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -201,7 +206,7 @@ export class GameContext {
         });
     }
     tileSize() {
-        return TILE_SIZE;
+        return this.tileSizeValue.get();
     }
     undo() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -263,8 +268,7 @@ export class GameContext {
             ArrayUtils.clear(this.history);
             this.atomsLayer.removeAllSprites();
             const arena = level.arena;
-            this.resizeTo(arena.numColumns() * TILE_SIZE, arena.numRows() * TILE_SIZE);
-            this.arenaCanvas.paint(arena);
+            this.paintLevel(level);
             this.element.classList.add("appear");
             yield Hold.forAnimationComplete(this.element);
             this.element.classList.remove("appear");
@@ -296,6 +300,9 @@ export class GameContext {
             this.history.splice(this.historyPointer, this.history.length - this.historyPointer);
             const moveOperation = new MoveOperation(this.soundManager, atomSprite, fromX, fromY, toX, toY);
             yield moveOperation.execute();
+            const shakeClassName = GameContext.resolveShakeClassName(direction);
+            this.element.classList.add(shakeClassName);
+            Hold.forAnimationComplete(this.element).then(() => this.element.classList.remove(shakeClassName));
             this.labelCountMoves.textContent = `${++this.moveCount}`.padStart(2, "0");
             this.history.push(moveOperation);
             this.historyPointer = this.history.length;
@@ -343,10 +350,20 @@ export class GameContext {
             }
         });
     }
-    resizeTo(width, height) {
+    paintLevel(level) {
+        const arena = level.arena;
+        const padding = 64;
+        const parentElement = this.element.parentElement;
+        this.element.style.width = `initial`;
+        this.element.style.height = `initial`;
+        this.tileSizeValue.set(Math.min(Math.min(48, Math.floor((parentElement.clientWidth - padding) / arena.numColumns()), Math.floor((parentElement.clientHeight - padding) / arena.numRows()))));
+        const tileSize = this.tileSizeValue.get();
+        const width = arena.numColumns() * tileSize;
+        const height = arena.numRows() * tileSize;
         this.arenaCanvas.resizeTo(width, height);
         this.element.style.width = `${width}px`;
         this.element.style.height = `${height}px`;
+        this.arenaCanvas.paint(arena, tileSize);
     }
     initAtomSprites(arena) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -354,7 +371,7 @@ export class GameContext {
             let count = 0;
             arena.iterateFields((maybeAtom, x, y) => __awaiter(this, void 0, void 0, function* () {
                 if (maybeAtom instanceof Atom) {
-                    const atomSprite = new AtomSprite(this.atomPainter, arena, maybeAtom, x, y);
+                    const atomSprite = new AtomSprite(this.atomPainter, this.tileSizeValue, arena, maybeAtom, x, y);
                     atomSprites.push(atomSprite);
                     count++;
                 }
@@ -398,6 +415,18 @@ export class GameContext {
                 return -1;
             return a.x - b.x;
         });
+    }
+    static resolveShakeClassName(direction) {
+        switch (direction) {
+            case Direction.Up:
+                return "shake-top";
+            case Direction.Left:
+                return "shake-left";
+            case Direction.Right:
+                return "shake-right";
+            case Direction.Down:
+                return "shake-bottom";
+        }
     }
 }
 //# sourceMappingURL=game.js.map
