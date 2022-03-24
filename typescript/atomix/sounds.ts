@@ -3,7 +3,7 @@ import {dbToGain} from "../audio/common.js"
 
 export enum Sound {
     BackgroundLoop, Move, Dock, Complete, LevelDocked,
-    AtomAppear, ClockElapsed, ClockRewind, AtomDispose, TransitionLevel
+    AtomAppear, ClockElapsed, ClockRewind, AtomDispose, TransitionLevel, GameComplete
 }
 
 export interface SoundPlayOptions {
@@ -36,6 +36,7 @@ export class SoundManager {
             this.register(Sound.ClockRewind, "samples/clock-rewind.wav"),
             this.register(Sound.AtomDispose, "samples/atom-dispose.wav"),
             this.register(Sound.TransitionLevel, "samples/transition-level.wav"),
+            this.register(Sound.GameComplete, "samples/game-complete.wav"),
         ]
     }
 

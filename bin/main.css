@@ -182,6 +182,12 @@ main {
     grid-template: 33vw 1fr/1fr 1fr;
   }
 }
+main.end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4vw;
+}
 main h1, main h2, main h3 {
   margin: 0;
   padding: 0;
@@ -213,7 +219,7 @@ main h3 {
 }
 main div.info {
   grid-area: 1/1;
-  background-color: #2A2A2A;
+  background-color: #202020;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -233,7 +239,7 @@ main div.info section .status {
   row-gap: 1vw;
 }
 main div.play-field {
-  background-color: #2A2A2A;
+  background-color: #202020;
   display: flex;
   font-size: calc(var(--size) * 4);
   white-space: pre-line;
@@ -332,7 +338,7 @@ main div.preview {
   justify-content: center;
   row-gap: 1vw;
   pointer-events: none;
-  background-color: #2A2A2A;
+  background-color: #202020;
   height: 100%;
   border-radius: 0 0.25vw 0 0;
 }
@@ -368,7 +374,7 @@ main div.action-buttons button {
   color: rgba(255, 255, 255, 0.6);
 }
 main div.action-buttons button:active {
-  background-color: #5d5d5d;
+  background-color: #535353;
 }
 
 /*# sourceMappingURL=main.css.map */

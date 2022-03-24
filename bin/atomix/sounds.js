@@ -21,6 +21,7 @@ export var Sound;
     Sound[Sound["ClockRewind"] = 7] = "ClockRewind";
     Sound[Sound["AtomDispose"] = 8] = "AtomDispose";
     Sound[Sound["TransitionLevel"] = 9] = "TransitionLevel";
+    Sound[Sound["GameComplete"] = 10] = "GameComplete";
 })(Sound || (Sound = {}));
 export class SoundManager {
     constructor(context) {
@@ -43,6 +44,7 @@ export class SoundManager {
             this.register(Sound.ClockRewind, "samples/clock-rewind.wav"),
             this.register(Sound.AtomDispose, "samples/atom-dispose.wav"),
             this.register(Sound.TransitionLevel, "samples/transition-level.wav"),
+            this.register(Sound.GameComplete, "samples/game-complete.wav"),
         ];
     }
     play(sound, options) {

@@ -1,16 +1,9 @@
 import { Level } from "./model/model.js";
 import { ControlHost } from "./controls/controls.js";
-import { Direction, Point } from "../lib/common.js";
+import { Direction } from "../lib/common.js";
 import { ArenaPainter, AtomPainter } from "./display/painter.js";
 import { SoundManager } from "./sounds.js";
 import { AtomSprite } from "./display/sprites.js";
-export declare class AtomsLayer {
-    private readonly element;
-    constructor(element: HTMLElement);
-    addSprite(atomSprite: AtomSprite): void;
-    removeAllSprites(): void;
-    showMovePreview(source: Point, target: Point, tileSize: number): () => void;
-}
 export declare class GameContext implements ControlHost {
     private readonly element;
     private readonly soundManager;
@@ -57,4 +50,5 @@ export declare class GameContext implements ControlHost {
     private renderMoleculePreview;
     private static sortAtomSprites;
     private static resolveShakeClassName;
+    private gameComplete;
 }

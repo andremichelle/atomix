@@ -56,4 +56,44 @@ export class MoveOperation {
         });
     }
 }
+export class Clock {
+    constructor(durationInSeconds, clockUpdate, clockComplete) {
+        this.durationInSeconds = durationInSeconds;
+        this.clockUpdate = clockUpdate;
+        this.clockComplete = clockComplete;
+        this.interval = -1;
+        this.seconds = 0;
+    }
+    restart() {
+        this.stop();
+        this.seconds = this.durationInSeconds;
+        this.clockUpdate(this.seconds);
+        this.interval = setInterval(() => {
+            if (this.seconds > 0) {
+                this.seconds--;
+                this.clockUpdate(this.seconds);
+            }
+            else {
+                this.clockComplete();
+                this.stop();
+            }
+        }, 1000);
+    }
+    stop() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = -1;
+        }
+    }
+    rewind(addScore) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.stop();
+            while (this.seconds > 0) {
+                yield Hold.forFrames(1);
+                addScore();
+                this.clockUpdate(--this.seconds);
+            }
+        });
+    }
+}
 //# sourceMappingURL=controls.js.map

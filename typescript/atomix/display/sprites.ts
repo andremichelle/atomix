@@ -1,5 +1,5 @@
 import {Direction, Hold, Point, Value} from "../../lib/common.js"
-import {AtomPainter} from "./painter.js"
+import {ArenaPainter, AtomPainter} from "./painter.js"
 import {Atom, Connector, Map2d, Tile} from "../model/model.js"
 
 export class AtomSprite implements Point {
@@ -102,5 +102,67 @@ export class AtomSprite implements Point {
     private translate() {
         const tileSize: number = this.tileSizeValue.get()
         this.canvas.style.transform = `translate(${this.x * tileSize}px, ${this.y * tileSize}px)`
+    }
+}
+
+export class MovePreview {
+    constructor(readonly atomSprite: AtomSprite,
+                readonly direction: Direction,
+                readonly hidePreview: () => void) {
+    }
+}
+
+export class ArenaCanvas {
+    private readonly canvas: HTMLCanvasElement = document.querySelector("canvas#background-layer")
+    private readonly context: CanvasRenderingContext2D = this.canvas.getContext("2d")
+
+    constructor(private readonly arenaPainter: ArenaPainter) {
+    }
+
+    get element(): HTMLElement {
+        return this.canvas
+    }
+
+    resizeTo(width: number, height: number) {
+        this.canvas.width = width * devicePixelRatio
+        this.canvas.height = height * devicePixelRatio
+    }
+
+    paint(arena: Map2d, tileSize: number): void {
+        this.context.save()
+        this.context.scale(devicePixelRatio, devicePixelRatio)
+        this.arenaPainter.paint(this.context, arena, tileSize)
+        this.context.restore()
+    }
+}
+
+export class AtomsLayer {
+    constructor(private readonly element: HTMLElement) {
+    }
+
+    addSprite(atomSprite: AtomSprite) {
+        this.element.appendChild(atomSprite.element())
+    }
+
+    removeAllSprites(): void {
+        while (this.element.lastChild !== null) {
+            this.element.lastChild.remove()
+        }
+    }
+
+    showMovePreview(source: Point, target: Point, tileSize: number): () => void {
+        const div = document.createElement("div")
+        div.classList.add("move-preview")
+        const y0 = Math.min(source.y, target.y) + 0.4
+        const y1 = Math.max(source.y, target.y) + 0.6
+        const x0 = Math.min(source.x, target.x) + 0.4
+        const x1 = Math.max(source.x, target.x) + 0.6
+        div.style.top = `${y0 * tileSize}px`
+        div.style.left = `${x0 * tileSize}px`
+        div.style.width = `${(x1 - x0) * tileSize}px`
+        div.style.height = `${(y1 - y0) * tileSize}px`
+        div.style.borderRadius = `${tileSize * 0.2}px`
+        this.element.prepend(div)
+        return () => div.remove()
     }
 }

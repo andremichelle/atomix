@@ -9,7 +9,8 @@ export declare enum Sound {
     ClockElapsed = 6,
     ClockRewind = 7,
     AtomDispose = 8,
-    TransitionLevel = 9
+    TransitionLevel = 9,
+    GameComplete = 10
 }
 export interface SoundPlayOptions {
     loop?: boolean;

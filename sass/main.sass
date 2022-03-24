@@ -1,7 +1,7 @@
 @import common
 @import animations
 
-$panel-color: #2A2A2A
+$panel-color: #202020
 $gap: 0.25vw
 
 main
@@ -14,6 +14,12 @@ main
     grid-template: 33vw 1fr / 1fr 1fr
   gap: $gap
   font-family: 'PressStart2P', sans-serif
+
+  &.end
+    display: flex
+    align-items: center
+    justify-content: center
+    font-size: 4vw
 
   h1, h2, h3
     margin: 0

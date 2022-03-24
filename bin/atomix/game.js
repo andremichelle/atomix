@@ -8,107 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { Atom } from "./model/model.js";
-import { MoveOperation } from "./controls/controls.js";
+import { Clock, MoveOperation } from "./controls/controls.js";
 import { TouchControl } from "./controls/touch.js";
 import { ArrayUtils, Direction, Hold, ObservableValueImpl, Options } from "../lib/common.js";
 import { Sound } from "./sounds.js";
-import { AtomSprite } from "./display/sprites.js";
+import { ArenaCanvas, AtomsLayer, AtomSprite, MovePreview } from "./display/sprites.js";
 import { MouseControl } from "./controls/mouse.js";
-class MovePreview {
-    constructor(atomSprite, direction, hidePreview) {
-        this.atomSprite = atomSprite;
-        this.direction = direction;
-        this.hidePreview = hidePreview;
-    }
-}
-class ArenaCanvas {
-    constructor(arenaPainter) {
-        this.arenaPainter = arenaPainter;
-        this.canvas = document.querySelector("canvas#background-layer");
-        this.context = this.canvas.getContext("2d");
-    }
-    get element() {
-        return this.canvas;
-    }
-    resizeTo(width, height) {
-        this.canvas.width = width * devicePixelRatio;
-        this.canvas.height = height * devicePixelRatio;
-    }
-    paint(arena, tileSize) {
-        this.context.save();
-        this.context.scale(devicePixelRatio, devicePixelRatio);
-        this.arenaPainter.paint(this.context, arena, tileSize);
-        this.context.restore();
-    }
-}
-export class AtomsLayer {
-    constructor(element) {
-        this.element = element;
-    }
-    addSprite(atomSprite) {
-        this.element.appendChild(atomSprite.element());
-    }
-    removeAllSprites() {
-        while (this.element.lastChild !== null) {
-            this.element.lastChild.remove();
-        }
-    }
-    showMovePreview(source, target, tileSize) {
-        const div = document.createElement("div");
-        div.classList.add("move-preview");
-        const y0 = Math.min(source.y, target.y) + 0.4;
-        const y1 = Math.max(source.y, target.y) + 0.6;
-        const x0 = Math.min(source.x, target.x) + 0.4;
-        const x1 = Math.max(source.x, target.x) + 0.6;
-        div.style.top = `${y0 * tileSize}px`;
-        div.style.left = `${x0 * tileSize}px`;
-        div.style.width = `${(x1 - x0) * tileSize}px`;
-        div.style.height = `${(y1 - y0) * tileSize}px`;
-        div.style.borderRadius = `${tileSize * 0.2}px`;
-        this.element.prepend(div);
-        return () => div.remove();
-    }
-}
-class Clock {
-    constructor(durationInSeconds, clockUpdate, clockComplete) {
-        this.durationInSeconds = durationInSeconds;
-        this.clockUpdate = clockUpdate;
-        this.clockComplete = clockComplete;
-        this.interval = -1;
-        this.seconds = 0;
-    }
-    restart() {
-        this.stop();
-        this.seconds = this.durationInSeconds;
-        this.clockUpdate(this.seconds);
-        this.interval = setInterval(() => {
-            if (this.seconds > 0) {
-                this.seconds--;
-                this.clockUpdate(this.seconds);
-            }
-            else {
-                this.clockComplete();
-                this.stop();
-            }
-        }, 1000);
-    }
-    stop() {
-        if (this.interval) {
-            clearInterval(this.interval);
-            this.interval = -1;
-        }
-    }
-    rewind(addScore) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.stop();
-            while (this.seconds > 0) {
-                yield Hold.forFrames(1);
-                addScore();
-                this.clockUpdate(--this.seconds);
-            }
-        });
-    }
-}
 export class GameContext {
     constructor(element, soundManager, arenaPainter, atomPainter, levels) {
         this.element = element;
@@ -340,7 +245,7 @@ export class GameContext {
             yield Hold.forAnimationComplete(this.element);
             this.element.classList.remove("disappear");
             if (++this.levelPointer === this.levels.length) {
-                console.log("ALL DONE");
+                this.gameComplete();
                 return;
             }
             else {
@@ -429,6 +334,16 @@ export class GameContext {
             case Direction.Down:
                 return "shake-bottom";
         }
+    }
+    gameComplete() {
+        const main = document.querySelector("main");
+        main.classList.add("end");
+        while (main.lastChild)
+            main.lastChild.remove();
+        const div = document.createElement("div");
+        div.textContent = "YOU ARE AWESOME!";
+        main.appendChild(div);
+        this.soundManager.play(Sound.GameComplete);
     }
 }
 //# sourceMappingURL=game.js.map

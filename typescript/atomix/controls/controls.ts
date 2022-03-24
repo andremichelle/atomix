@@ -55,3 +55,44 @@ export class MoveOperation {
         this.soundManager.play(Sound.Dock)
     }
 }
+
+export class Clock {
+    private interval: number = -1
+    private seconds: number = 0
+
+    constructor(private readonly durationInSeconds: number,
+                private readonly clockUpdate: (seconds: number) => void,
+                private readonly clockComplete: () => void) {
+    }
+
+    restart(): void {
+        this.stop()
+        this.seconds = this.durationInSeconds
+        this.clockUpdate(this.seconds)
+        this.interval = setInterval(() => {
+            if (this.seconds > 0) {
+                this.seconds--
+                this.clockUpdate(this.seconds)
+            } else {
+                this.clockComplete()
+                this.stop()
+            }
+        }, 1000)
+    }
+
+    stop(): void {
+        if (this.interval) {
+            clearInterval(this.interval)
+            this.interval = -1
+        }
+    }
+
+    async rewind(addScore: (() => void)): Promise<void> {
+        this.stop()
+        while (this.seconds > 0) {
+            await Hold.forFrames(1)
+            addScore()
+            this.clockUpdate(--this.seconds)
+        }
+    }
+}

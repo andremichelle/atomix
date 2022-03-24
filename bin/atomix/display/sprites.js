@@ -98,4 +98,59 @@ export class AtomSprite {
     }
 }
 AtomSprite.PADDING = 8;
+export class MovePreview {
+    constructor(atomSprite, direction, hidePreview) {
+        this.atomSprite = atomSprite;
+        this.direction = direction;
+        this.hidePreview = hidePreview;
+    }
+}
+export class ArenaCanvas {
+    constructor(arenaPainter) {
+        this.arenaPainter = arenaPainter;
+        this.canvas = document.querySelector("canvas#background-layer");
+        this.context = this.canvas.getContext("2d");
+    }
+    get element() {
+        return this.canvas;
+    }
+    resizeTo(width, height) {
+        this.canvas.width = width * devicePixelRatio;
+        this.canvas.height = height * devicePixelRatio;
+    }
+    paint(arena, tileSize) {
+        this.context.save();
+        this.context.scale(devicePixelRatio, devicePixelRatio);
+        this.arenaPainter.paint(this.context, arena, tileSize);
+        this.context.restore();
+    }
+}
+export class AtomsLayer {
+    constructor(element) {
+        this.element = element;
+    }
+    addSprite(atomSprite) {
+        this.element.appendChild(atomSprite.element());
+    }
+    removeAllSprites() {
+        while (this.element.lastChild !== null) {
+            this.element.lastChild.remove();
+        }
+    }
+    showMovePreview(source, target, tileSize) {
+        const div = document.createElement("div");
+        div.classList.add("move-preview");
+        const y0 = Math.min(source.y, target.y) + 0.4;
+        const y1 = Math.max(source.y, target.y) + 0.6;
+        const x0 = Math.min(source.x, target.x) + 0.4;
+        const x1 = Math.max(source.x, target.x) + 0.6;
+        div.style.top = `${y0 * tileSize}px`;
+        div.style.left = `${x0 * tileSize}px`;
+        div.style.width = `${(x1 - x0) * tileSize}px`;
+        div.style.height = `${(y1 - y0) * tileSize}px`;
+        div.style.borderRadius = `${tileSize * 0.2}px`;
+        this.element.prepend(div);
+        return () => div.remove();
+    }
+}
 //# sourceMappingURL=sprites.js.map

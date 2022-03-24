@@ -1,123 +1,11 @@
 import {Atom, Connector, Level, Map2d} from "./model/model.js"
-import {ControlHost, MoveOperation} from "./controls/controls.js"
+import {Clock, ControlHost, MoveOperation} from "./controls/controls.js"
 import {TouchControl} from "./controls/touch.js"
-import {
-    ArrayUtils,
-    Direction,
-    Hold,
-    ObservableValue,
-    ObservableValueImpl,
-    Option,
-    Options,
-    Point
-} from "../lib/common.js"
+import {ArrayUtils, Direction, Hold, ObservableValue, ObservableValueImpl, Option, Options} from "../lib/common.js"
 import {ArenaPainter, AtomPainter} from "./display/painter.js"
 import {Sound, SoundManager} from "./sounds.js"
-import {AtomSprite} from "./display/sprites.js"
+import {ArenaCanvas, AtomsLayer, AtomSprite, MovePreview} from "./display/sprites.js"
 import {MouseControl} from "./controls/mouse.js"
-
-class MovePreview {
-    constructor(readonly atomSprite: AtomSprite,
-                readonly direction: Direction,
-                readonly hidePreview: () => void) {
-    }
-}
-
-class ArenaCanvas {
-    private readonly canvas: HTMLCanvasElement = document.querySelector("canvas#background-layer")
-    private readonly context: CanvasRenderingContext2D = this.canvas.getContext("2d")
-
-    constructor(private readonly arenaPainter: ArenaPainter) {
-    }
-
-    get element(): HTMLElement {
-        return this.canvas
-    }
-
-    resizeTo(width: number, height: number) {
-        this.canvas.width = width * devicePixelRatio
-        this.canvas.height = height * devicePixelRatio
-    }
-
-    paint(arena: Map2d, tileSize: number): void {
-        this.context.save()
-        this.context.scale(devicePixelRatio, devicePixelRatio)
-        this.arenaPainter.paint(this.context, arena, tileSize)
-        this.context.restore()
-    }
-}
-
-export class AtomsLayer {
-    constructor(private readonly element: HTMLElement) {
-    }
-
-    addSprite(atomSprite: AtomSprite) {
-        this.element.appendChild(atomSprite.element())
-    }
-
-    removeAllSprites(): void {
-        while (this.element.lastChild !== null) {
-            this.element.lastChild.remove()
-        }
-    }
-
-    showMovePreview(source: Point, target: Point, tileSize: number): () => void {
-        const div = document.createElement("div")
-        div.classList.add("move-preview")
-        const y0 = Math.min(source.y, target.y) + 0.4
-        const y1 = Math.max(source.y, target.y) + 0.6
-        const x0 = Math.min(source.x, target.x) + 0.4
-        const x1 = Math.max(source.x, target.x) + 0.6
-        div.style.top = `${y0 * tileSize}px`
-        div.style.left = `${x0 * tileSize}px`
-        div.style.width = `${(x1 - x0) * tileSize}px`
-        div.style.height = `${(y1 - y0) * tileSize}px`
-        div.style.borderRadius = `${tileSize * 0.2}px`
-        this.element.prepend(div)
-        return () => div.remove()
-    }
-}
-
-class Clock {
-    private interval: number = -1
-    private seconds: number = 0
-
-    constructor(private readonly durationInSeconds: number,
-                private readonly clockUpdate: (seconds: number) => void,
-                private readonly clockComplete: () => void) {
-    }
-
-    restart(): void {
-        this.stop()
-        this.seconds = this.durationInSeconds
-        this.clockUpdate(this.seconds)
-        this.interval = setInterval(() => {
-            if (this.seconds > 0) {
-                this.seconds--
-                this.clockUpdate(this.seconds)
-            } else {
-                this.clockComplete()
-                this.stop()
-            }
-        }, 1000)
-    }
-
-    stop(): void {
-        if (this.interval) {
-            clearInterval(this.interval)
-            this.interval = -1
-        }
-    }
-
-    async rewind(addScore: (() => void)): Promise<void> {
-        this.stop()
-        while (this.seconds > 0) {
-            await Hold.forFrames(1)
-            addScore()
-            this.clockUpdate(--this.seconds)
-        }
-    }
-}
 
 export class GameContext implements ControlHost {
     private readonly arenaCanvas: ArenaCanvas = new ArenaCanvas(this.arenaPainter)
@@ -346,8 +234,7 @@ export class GameContext implements ControlHost {
         await Hold.forAnimationComplete(this.element)
         this.element.classList.remove("disappear")
         if (++this.levelPointer === this.levels.length) {
-            console.log("ALL DONE")
-            // TODO
+            this.gameComplete()
             return
         } else {
             await this.startLevel(this.levels[this.levelPointer])
@@ -440,5 +327,15 @@ export class GameContext implements ControlHost {
             case Direction.Down:
                 return "shake-bottom"
         }
+    }
+
+    private gameComplete() {
+        const main = document.querySelector("main")
+        main.classList.add("end")
+        while (main.lastChild) main.lastChild.remove()
+        const div = document.createElement("div")
+        div.textContent = "YOU ARE AWESOME!"
+        main.appendChild(div)
+        this.soundManager.play(Sound.GameComplete)
     }
 }
