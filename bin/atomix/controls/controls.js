@@ -7,8 +7,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { Hold } from "../../lib/common.js";
+import { Direction, Hold } from "../../lib/common.js";
 import { Sound } from "../sounds.js";
+export const resolveDirection = (x, y) => {
+    const angle = Math.atan2(y, x) - Math.PI * 0.25;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    if (dx > 0) {
+        if (dy >= 0)
+            return Direction.Down;
+        else
+            return Direction.Right;
+    }
+    else {
+        if (dy >= 0)
+            return Direction.Left;
+        else
+            return Direction.Up;
+    }
+};
 export class MoveOperation {
     constructor(soundManager, atomSprite, fromX, fromY, toX, toY) {
         this.soundManager = soundManager;

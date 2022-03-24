@@ -14,6 +14,7 @@ import {
 import {ArenaPainter, AtomPainter} from "./display/painter.js"
 import {Sound, SoundManager} from "./sounds.js"
 import {AtomSprite} from "./display/sprites.js"
+import {MouseControl} from "./controls/mouse.js"
 
 class MovePreview {
     constructor(readonly atomSprite: AtomSprite,
@@ -173,7 +174,8 @@ export class GameContext implements ControlHost {
                 await this.solve()
             }
         })
-        new TouchControl(this)
+        TouchControl.installUserInput(this)
+        MouseControl.installUserInput(this)
     }
 
     async start() {

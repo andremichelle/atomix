@@ -8,6 +8,7 @@ export interface ControlHost {
     hidePreviewMove(commit: boolean): any;
     tileSize(): number;
 }
+export declare const resolveDirection: (x: number, y: number) => Direction;
 export declare class MoveOperation {
     readonly soundManager: SoundManager;
     readonly atomSprite: AtomSprite;

@@ -14,6 +14,19 @@ export interface ControlHost {
     tileSize(): number
 }
 
+export const resolveDirection = (x: number, y: number): Direction => {
+    const angle = Math.atan2(y, x) - Math.PI * 0.25 // rotate 45deg
+    const dx = Math.cos(angle)
+    const dy = Math.sin(angle)
+    if (dx > 0) {
+        if (dy >= 0) return Direction.Down
+        else return Direction.Right
+    } else {
+        if (dy >= 0) return Direction.Left
+        else return Direction.Up
+    }
+}
+
 export class MoveOperation {
     private readonly distance = Math.max(Math.abs(this.toX - this.fromX), Math.abs(this.toY - this.fromY)) // simplified for 2 axis
 

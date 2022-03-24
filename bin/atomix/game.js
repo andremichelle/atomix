@@ -13,6 +13,7 @@ import { TouchControl } from "./controls/touch.js";
 import { ArrayUtils, Direction, Hold, ObservableValueImpl, Options } from "../lib/common.js";
 import { Sound } from "./sounds.js";
 import { AtomSprite } from "./display/sprites.js";
+import { MouseControl } from "./controls/mouse.js";
 class MovePreview {
     constructor(atomSprite, direction, hidePreview) {
         this.atomSprite = atomSprite;
@@ -154,7 +155,8 @@ export class GameContext {
                 yield this.solve();
             }
         }));
-        new TouchControl(this);
+        TouchControl.installUserInput(this);
+        MouseControl.installUserInput(this);
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
