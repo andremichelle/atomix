@@ -56,9 +56,6 @@ export class Boot {
             .then(fontFace => faceSet.add(fontFace))));
     }
     registerProcess(promise) {
-        if (this.completed) {
-            console.warn("Cannot register processes when boot is already completed.");
-        }
         this.totalTasks++;
         let result = null;
         promise.then((value) => {

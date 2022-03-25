@@ -51,7 +51,10 @@ export class GameContext {
         document.getElementById("reset-button").addEventListener("click", () => this.reset());
         window.addEventListener("resize", () => {
             this.level.ifPresent(level => this.paintLevel(level));
+            this.atomSprites.forEach(atomSprite => atomSprite.element().classList.add("no-transition"));
             this.atomSprites.forEach(atomSprite => atomSprite.updatePaint());
+            requestAnimationFrame(() => this.atomSprites
+                .forEach(atomSprite => atomSprite.element().classList.remove("no-transition")));
         });
         this.labelTitle.addEventListener("touchstart", (event) => __awaiter(this, void 0, void 0, function* () {
             if (!this.acceptUserInput)

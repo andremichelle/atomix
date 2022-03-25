@@ -106,7 +106,7 @@ svg.preloader > circle.progress {
 }
 @keyframes level-appear {
   0% {
-    top: -100%;
+    top: -100vh;
   }
   100% {
     top: 0;
@@ -117,7 +117,7 @@ svg.preloader > circle.progress {
     top: 0;
   }
   100% {
-    top: 100%;
+    top: 100vh;
   }
 }
 @keyframes play-button-disappear {
@@ -319,6 +319,9 @@ main div.play-field div.layers > div#atom-layer > canvas.atom-sprite {
   position: absolute;
   transition: transform var(--duration) ease-in-out;
   animation: atom-appear 333ms ease-out forwards;
+}
+main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.no-transition {
+  transition: none !important;
 }
 main div.play-field div.layers > div#atom-layer > canvas.atom-sprite.flash {
   animation: atom-flash 333ms ease-out;

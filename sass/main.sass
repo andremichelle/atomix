@@ -150,6 +150,9 @@ main
           transition: transform var(--duration) ease-in-out
           animation: atom-appear 333ms ease-out forwards
 
+          &.no-transition
+            transition: none !important
+
           &.flash
             animation: atom-flash 333ms ease-out
 
