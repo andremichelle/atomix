@@ -42,7 +42,7 @@ export class GameContext implements ControlHost {
     private score = 0
     private moveCount = 0
 
-    acceptUserInput: boolean = false
+    private acceptUserInput: boolean = false
 
     constructor(private readonly element: HTMLElement,
                 private readonly soundManager: SoundManager,
